@@ -9,36 +9,41 @@
     <link rel="stylesheet" href="style.css">
   </head>
   <body>
-    <aside class="sidebar">
-      <a class="brand" href="#inicio" aria-label="Duelo64 - Página inicial">
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="header-brand" href="#inicio" aria-label="Duelo64 - Página inicial">
         <img class="brand-logo" src="assets/duelo64-logo-transparent.png" alt="Duelo64">
-      </a>
-      <nav class="navigation" aria-label="Navegação principal">
-        <a class="nav-link active" href="#inicio"><i data-lucide="house" aria-hidden="true"></i>Início</a>
-        <a class="nav-link" href="#jogos"><i data-lucide="layout-grid" aria-hidden="true"></i>Jogos</a>
-        <a class="nav-link" href="#damas"><i data-lucide="swords" aria-hidden="true"></i>Jogar agora</a>
-        <a class="nav-link" href="#partidas"><i data-lucide="history" aria-hidden="true"></i>Partidas</a>
-        <a class="nav-link" href="#ranking"><i data-lucide="trophy" aria-hidden="true"></i>Ranking</a>
-        <a class="nav-link" href="#amigos"><i data-lucide="users" aria-hidden="true"></i>Amigos</a>
-      </nav>
-      <div class="sidebar-account">
-        <a class="button button-primary button-full" href="#cadastro">Criar conta</a>
-        <a class="button button-secondary button-full" href="#login">Entrar</a>
+        </a>
+
+        <nav class="top-navigation" aria-label="Navegação principal">
+          <a class="top-link active" href="#inicio">Início</a>
+          <a class="top-link" href="#jogos">Jogos</a>
+          <a class="top-link" href="#ranking">Ranking</a>
+          <a class="top-link" href="#sobre">Sobre</a>
+          <a class="top-link mobile-account-link" href="#login">Entrar</a>
+          <a class="top-link mobile-account-link mobile-signup-link" href="#cadastro">Criar conta</a>
+        </nav>
+
+        <div class="header-actions">
+          <a class="header-login" href="#login">Entrar</a>
+          <a class="button button-primary header-signup" href="#cadastro">Criar conta</a>
+        </div>
+
+        <button class="menu-button" type="button" aria-label="Abrir menu" aria-expanded="false">
+          <i data-lucide="menu" aria-hidden="true"></i>
+        </button>
       </div>
-    </aside>
+    </header>
+
     <main class="page" id="inicio">
-      <header class="mobile-header">
-        <img src="assets/duelo64-logo-transparent.png" alt="Duelo64">
-        <button class="menu-button" type="button" aria-label="Abrir menu"><i data-lucide="menu"></i></button>
-      </header>
       <section class="platform-hero">
         <div class="hero-copy">
           <span class="eyebrow">DUELO64</span>
           <h1>Sua próxima partida começa aqui.</h1>
           <p>Enfrente outros jogadores em partidas rápidas de estratégia. Pense, mova e vença.</p>
           <div class="hero-actions">
-            <a class="button button-primary button-large" href="#damas"><i data-lucide="play"></i>Jogar Damas</a>
-            <a class="hero-text-link" href="#jogos">Ver todos os jogos <span>→</span></a>
+            <a class="button button-primary button-large hero-button" href="#damas"><span>Ver todos os jogos</span></a>
+
           </div>
         </div>
         <div class="game-preview hero-board" aria-label="Prévia de uma partida de Damas Brasileiras">
@@ -71,7 +76,7 @@
         <div class="game-library">
           <article class="game-card game-card-featured" id="damas">
             <div class="game-card-icon checkers-card-icon" aria-hidden="true">
-              <i></i><i></i><i></i><i></i><i></i>
+              <span class="checker-disc"></span>
             </div>
             <div class="game-card-copy">
               <div class="game-title-line">
@@ -83,23 +88,69 @@
             <a class="button button-primary game-card-action" href="#partida">Abrir jogo <span>→</span></a>
           </article>
           <article class="game-card game-card-locked">
-            <div class="game-card-icon" aria-hidden="true">♜</div>
+            <div class="game-card-icon chess-card-icon" aria-hidden="true">♜</div>
             <div class="game-card-copy"><h3>Xadrez</h3><p>Em breve</p></div>
           </article>
           <article class="game-card game-card-locked">
-            <div class="game-card-icon connect-four-icon" aria-hidden="true">••<br>••</div>
+            <div class="game-card-icon connect-four-icon" aria-hidden="true">
+              <span></span><span></span><span></span><span></span>
+              <span></span><span class="connected"></span><span></span><span></span>
+              <span class="connected"></span><span class="connected"></span><span class="connected"></span><span></span>
+            </div>
             <div class="game-card-copy"><h3>Conecta 4</h3><p>Em breve</p></div>
           </article>
           <article class="game-card game-card-locked">
-            <div class="game-card-icon" aria-hidden="true">×○</div>
+            <div class="game-card-icon tic-tac-toe-icon" aria-hidden="true">
+              <span>×</span><span></span><span>○</span>
+              <span></span><span>×</span><span></span>
+              <span>○</span><span></span><span>×</span>
+            </div>
             <div class="game-card-copy"><h3>Jogo da Velha</h3><p>Em breve</p></div>
           </article>
         </div>
       </section>
+
+      <footer class="site-footer">
+        <div class="footer-intro">
+          <a class="footer-mark" href="#inicio">DUELO64</a>
+          <p>Cada movimento decide. Escolha seu jogo e entre no duelo.</p>
+        </div>
+
+        <nav class="footer-links footer-links-primary" aria-label="Navegação do rodapé">
+          <a href="#jogos">Jogos</a>
+          <a href="#ranking">Ranking</a>
+          <a href="#amigos">Amigos</a>
+        </nav>
+
+        <nav class="footer-links footer-links-secondary" aria-label="Informações do Duelo64">
+          <a href="#como-jogar">Como jogar</a>
+          <a href="#sobre">Sobre</a>
+          <a href="#faq">FAQ</a>
+          <a href="#termos">Termos</a>
+          <a href="#privacidade">Privacidade</a>
+        </nav>
+
+        <p class="footer-legal">
+          © 2026 Duelo64 · Desenvolvido por
+          <a href="https://kaiohenrique.dev" target="_blank" rel="noreferrer">Kaio Henrique</a>
+        </p>
+      </footer>
     </main>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script>
       if (window.lucide) window.lucide.createIcons();
+      const header = document.querySelector(".site-header");
+      const menuButton = document.querySelector(".menu-button");
+      menuButton?.addEventListener("click", () => {
+        const isOpen = header.classList.toggle("menu-open");
+        menuButton.setAttribute("aria-expanded", String(isOpen));
+      });
+      document.querySelectorAll(".top-navigation a").forEach((link) => {
+        link.addEventListener("click", () => {
+          header.classList.remove("menu-open");
+          menuButton?.setAttribute("aria-expanded", "false");
+        });
+      });
     </script>
   </body>
 </html>
