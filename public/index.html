@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+      name="description"
+      content="Duelo64 — plataforma multiplayer de jogos de estratégia em tempo real."
+    >
+    <title>Duelo64 — Cada movimento decide</title>
+    <link rel="icon" type="image/png" href="assets/duelo64-icon-512.png">
+    <link rel="stylesheet" href="style.css">
+  </head>
+
+  <body>
+    <aside class="sidebar">
+      <a class="brand" href="#inicio" aria-label="Duelo64 - Página inicial">
+        <img class="brand-logo" src="assets/duelo64-logo-transparent.png" alt="Duelo64">
+      </a>
+
+      <nav class="navigation" aria-label="Navegação principal">
+        <a class="nav-link active" href="#inicio"><span>◆</span>Início</a>
+        <a class="nav-link" href="#jogos"><span>▦</span>Jogos</a>
+        <a class="nav-link" href="#jogar"><span>▶</span>Jogar agora</a>
+        <a class="nav-link" href="#partidas"><span>◫</span>Partidas</a>
+        <a class="nav-link" href="#ranking"><span>★</span>Ranking</a>
+        <a class="nav-link" href="#amigos"><span>●</span>Amigos</a>
+      </nav>
+
+      <div class="sidebar-account">
+        <a class="button button-primary button-full" href="#cadastro">Criar conta</a>
+        <a class="button button-secondary button-full" href="#login">Entrar</a>
+      </div>
+    </aside>
+
+    <main class="page" id="inicio">
+      <header class="mobile-header">
+        <img src="assets/duelo64-logo-transparent.png" alt="Duelo64">
+        <button class="menu-button" type="button" aria-label="Abrir menu">☰</button>
+      </header>
+
+      <section class="platform-hero">
+        <div class="hero-copy">
+          <span class="eyebrow">PLATAFORMA MULTIPLAYER DE ESTRATÉGIA</span>
+          <h1>Escolha o jogo.<br>Encontre um rival.<br><em>Entre no duelo.</em></h1>
+          <p>
+            Dispute partidas em tempo real, desafie seus amigos e evolua em
+            diferentes jogos de estratégia.
+          </p>
+
+          <div class="hero-actions">
+            <a class="button button-primary button-large" href="#jogos">Explorar jogos</a>
+            <a class="button button-secondary button-large" href="#sala">＋ Criar sala</a>
+          </div>
+
+          <div class="online-info">
+            <span class="status-dot"></span>
+            <span><strong>128 jogadores</strong> online agora</span>
+          </div>
+        </div>
+
+        <div class="quick-play" id="jogar">
+          <div class="panel-heading">
+            <div>
+              <span>JOGAR AGORA</span>
+              <h2>Escolha seu duelo</h2>
+            </div>
+            <span class="beta-label">BETA</span>
+          </div>
+
+          <a class="quick-game available" href="#damas">
+            <span class="game-symbol checkers-symbol" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="quick-game-copy">
+              <strong>Damas Brasileiras</strong>
+              <small>Disponível agora</small>
+            </span>
+            <span class="game-arrow">→</span>
+          </a>
+
+          <div class="quick-game locked">
+            <span class="game-symbol chess-symbol" aria-hidden="true">♞</span>
+            <span class="quick-game-copy"><strong>Xadrez</strong><small>Em breve</small></span>
+            <span class="lock-label">EM BREVE</span>
+          </div>
+
+          <div class="quick-game locked">
+            <span class="game-symbol connect-symbol" aria-hidden="true">●●<br>●●</span>
+            <span class="quick-game-copy"><strong>Lig 4</strong><small>Em desenvolvimento</small></span>
+            <span class="lock-label">EM BREVE</span>
+          </div>
+
+          <div class="quick-game locked">
+            <span class="game-symbol tic-symbol" aria-hidden="true">×○</span>
+            <span class="quick-game-copy"><strong>Jogo da Velha</strong><small>Planejado</small></span>
+            <span class="lock-label">EM BREVE</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="games-section" id="jogos">
+        <header class="section-header">
+          <div>
+            <span class="section-kicker">CATÁLOGO</span>
+            <h2>Escolha seu jogo</h2>
+          </div>
+          <p>Uma plataforma, diferentes formas de colocar sua estratégia à prova.</p>
+        </header>
+
+        <div class="game-catalog">
+          <article class="catalog-card featured-game">
+            <div class="catalog-visual board-pattern">
+              <span class="catalog-status">DISPONÍVEL</span>
+              <i class="catalog-piece piece-one"></i>
+              <i class="catalog-piece piece-two"></i>
+              <i class="catalog-piece piece-three"></i>
+            </div>
+            <div class="catalog-content">
+              <span>DAMAS BRASILEIRAS</span>
+              <h3>O primeiro duelo começa aqui.</h3>
+              <p>Partidas rápidas, salas privadas e movimentos validados em tempo real.</p>
+              <a class="text-link" href="#damas">Conhecer modalidade →</a>
+            </div>
+          </article>
+
+          <article class="catalog-card coming-game">
+            <div class="coming-symbol">♜</div>
+            <span>EM BREVE</span>
+            <h3>Xadrez</h3>
+            <p>Clássico, competitivo e preparado para diferentes ritmos.</p>
+          </article>
+
+          <article class="catalog-card coming-game">
+            <div class="coming-symbol">••<br>••</div>
+            <span>EM BREVE</span>
+            <h3>Lig 4</h3>
+            <p>Confrontos rápidos para desafiar sua leitura de jogo.</p>
+          </article>
+
+          <article class="catalog-card coming-game">
+            <div class="coming-symbol">×○</div>
+            <span>EM BREVE</span>
+            <h3>Jogo da Velha</h3>
+            <p>Simples de aprender e perfeito para duelos casuais.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="checkers-feature" id="damas">
+        <div class="checkers-copy">
+          <span class="section-kicker">PRIMEIRA MODALIDADE</span>
+          <h2>Damas Brasileiras</h2>
+          <p>
+            Entre em partidas online com regras validadas pelo servidor,
+            convide amigos por link e acompanhe sua evolução competitiva.
+          </p>
+
+          <ul class="feature-list">
+            <li><span>✓</span>Partidas em tempo real</li>
+            <li><span>✓</span>Salas privadas por código</li>
+            <li><span>✓</span>Histórico e ranking</li>
+          </ul>
+
+          <a class="button button-primary button-large" href="#partida">Começar partida</a>
+        </div>
+
+        <div class="game-preview" aria-label="Prévia do tabuleiro de Damas Brasileiras">
+          <div class="preview-topbar">
+            <span><i class="status-dot"></i>Partida rápida</span>
+            <span>10 min</span>
+          </div>
+
+          <div class="player-row">
+            <span class="player-avatar avatar-dark">R</span>
+            <span class="player-info"><strong>Rival encontrado</strong><small>Ouro • 1.482</small></span>
+            <strong class="player-time">09:42</strong>
+          </div>
+
+          <div class="board" aria-hidden="true">
+            <span class="light"></span><span class="dark"><i class="piece black"></i></span><span class="light"></span><span class="dark"><i class="piece black"></i></span><span class="light"></span><span class="dark"><i class="piece black"></i></span><span class="light"></span><span class="dark"><i class="piece black"></i></span>
+            <span class="dark"><i class="piece black"></i></span><span class="light"></span><span class="dark"><i class="piece black"></i></span><span class="light"></span><span class="dark"><i class="piece black"></i></span><span class="light"></span><span class="dark"><i class="piece black"></i></span><span class="light"></span>
+            <span class="light"></span><span class="dark"><i class="piece black"></i></span><span class="light"></span><span class="dark"></span><span class="light"></span><span class="dark"><i class="piece black"></i></span><span class="light"></span><span class="dark"><i class="piece black"></i></span>
+            <span class="dark"></span><span class="light"></span><span class="dark"></span><span class="light"></span><span class="dark selected"><i class="piece black"></i></span><span class="light"></span><span class="dark"></span><span class="light"></span>
+            <span class="light"></span><span class="dark"></span><span class="light"></span><span class="dark move"></span><span class="light"></span><span class="dark"></span><span class="light"></span><span class="dark"></span>
+            <span class="dark"><i class="piece white"></i></span><span class="light"></span><span class="dark"><i class="piece white"></i></span><span class="light"></span><span class="dark"></span><span class="light"></span><span class="dark"><i class="piece white"></i></span><span class="light"></span>
+            <span class="light"></span><span class="dark"><i class="piece white"></i></span><span class="light"></span><span class="dark"><i class="piece white"></i></span><span class="light"></span><span class="dark"><i class="piece white"></i></span><span class="light"></span><span class="dark"><i class="piece white"></i></span>
+            <span class="dark"><i class="piece white"></i></span><span class="light"></span><span class="dark"><i class="piece white"></i></span><span class="light"></span><span class="dark"><i class="piece white"></i></span><span class="light"></span><span class="dark"><i class="piece white"></i></span><span class="light"></span>
+          </div>
+
+          <div class="player-row">
+            <span class="player-avatar avatar-orange">K</span>
+            <span class="player-info"><strong>Você</strong><small>Prata • 1.264</small></span>
+            <strong class="player-time active-time">09:58</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="platform-features" id="partidas" aria-label="Recursos da plataforma">
+        <article><span>01</span><h3>Tempo real</h3><p>Jogadas sincronizadas e validadas pelo servidor.</p></article>
+        <article><span>02</span><h3>Salas privadas</h3><p>Convide seus amigos usando um link ou código.</p></article>
+        <article><span>03</span><h3>Competição</h3><p>Ranking, histórico e estatísticas em um só perfil.</p></article>
+      </section>
+    </main>
+  </body>
+</html>

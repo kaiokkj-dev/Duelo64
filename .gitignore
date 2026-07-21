@@ -1,0 +1,8 @@
+# Arquivos gerados por ferramentas e editores
+.vscode/
+.idea/
+*.log
+.DS_Store
+
+# O backend Java será configurado posteriormente
+target/
