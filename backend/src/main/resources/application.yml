@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: Duelo64 API
+
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/duelo64}
+    username: ${DATABASE_USERNAME:duelo64}
+    password: ${DATABASE_PASSWORD:duelo64}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+
+server:
+  port: ${SERVER_PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
