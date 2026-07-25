@@ -26,4 +26,15 @@ public class AuthController {
 
         return ResponseEntity.accepted().build();
     }
+
+    @PostMapping("/codes/verify")
+    public ResponseEntity<Void> verifyCode(
+            @Valid @RequestBody VerifyAuthCodeRequest request) {
+
+        authCodeService.verifyCode(
+                request.email(),
+                request.code());
+
+        return ResponseEntity.noContent().build();
+    }
 }

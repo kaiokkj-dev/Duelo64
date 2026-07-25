@@ -57,6 +57,10 @@ public class User {
         updatedAt = Instant.now();
     }
 
+    public void registerLogin() {
+    lastLoginAt = Instant.now();
+}
+
     public UUID getId() {
         return id;
     }

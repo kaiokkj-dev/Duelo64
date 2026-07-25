@@ -7,27 +7,33 @@ import java.util.Locale;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthCodeService {
 
     private static final int CODE_BOUND = 1_000_000;
     private static final int CODE_DURATION_MINUTES = 5;
+    private static final int MAXIMUM_ATTEMPTS = 5;
 
     private final AuthCodeRepository authCodeRepository;
+    private final AuthEmailService authEmailService;
     private final PasswordEncoder passwordEncoder;
     private final SecureRandom secureRandom;
 
     public AuthCodeService(
             AuthCodeRepository authCodeRepository,
+            AuthEmailService authEmailService,
             PasswordEncoder passwordEncoder) {
 
         this.authCodeRepository = authCodeRepository;
+        this.authEmailService = authEmailService;
         this.passwordEncoder = passwordEncoder;
         this.secureRandom = new SecureRandom();
     }
 
-    public String createCode(String email) {
+    @Transactional
+    public void createCode(String email) {
         String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
         String code = generateSixDigitCode();
         String codeHash = passwordEncoder.encode(code);
@@ -38,12 +44,40 @@ public class AuthCodeService {
         AuthCode authCode = new AuthCode(
                 normalizedEmail,
                 codeHash,
-                expiresAt
-        );
+                expiresAt);
 
         authCodeRepository.save(authCode);
+        authEmailService.sendCode(normalizedEmail, code);
+    }
 
-        return code;
+    @Transactional(noRollbackFor = InvalidAuthCodeException.class)
+    public void verifyCode(String email, String code) {
+        String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
+
+        AuthCode authCode = authCodeRepository
+                .findFirstByEmailIgnoreCaseAndUsedAtIsNullOrderByCreatedAtDesc(
+                        normalizedEmail)
+                .orElseThrow(() -> new InvalidAuthCodeException(
+                        "Código inválido ou expirado."));
+
+        if (authCode.isExpired()) {
+            throw new InvalidAuthCodeException(
+                    "Código inválido ou expirado.");
+        }
+
+        if (authCode.hasReachedAttemptLimit(MAXIMUM_ATTEMPTS)) {
+            throw new InvalidAuthCodeException(
+                    "Limite de tentativas atingido.");
+        }
+
+        if (!passwordEncoder.matches(code, authCode.getCodeHash())) {
+            authCode.registerFailedAttempt();
+
+            throw new InvalidAuthCodeException(
+                    "Código inválido ou expirado.");
+        }
+
+        authCode.markAsUsed();
     }
 
     private String generateSixDigitCode() {

@@ -21,6 +21,8 @@ public class SecurityConfig {
                                 .authorizeHttpRequests(authorize -> authorize
                                                 .requestMatchers("/api/v1/status", "/actuator/health").permitAll()
                                                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/codes").permitAll()
+                                                .requestMatchers(HttpMethod.POST, "/api/v1/auth/codes/verify").permitAll()
+                                                
                                                 .anyRequest().authenticated())
                                 .build();
         }
