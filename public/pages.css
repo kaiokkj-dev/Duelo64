@@ -62,7 +62,11 @@ a:focus-visible, button:focus-visible { outline: 3px solid rgb(249 115 22 / 38%)
 .header-actions { margin-left: auto; }
 .button { display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: 8px; font-weight: 900; text-decoration: none; transition: 160ms ease; }
 .button:hover { transform: translateY(-3px); }
-.button-primary { padding: 10px 18px; color: #fff; border-color: var(--laranja); background: var(--laranja); box-shadow: 0 3px 0 #8f3908; font-size: 15px; }
+.button-primary { padding: 10px 18px; color: #fff; border: 1px solid var(--laranja); 
+  border-radius: 8px; background: var(--laranja); 
+  box-shadow: 0 3px 0 #8f3908; font-size: 15px; 
+  font-weight: 900; 
+  text-decoration: none;}
 .button-primary:hover { background: var(--laranja-hover); }
 .header-signup { min-height: 40px; padding-inline: 17px; font-size: 12px; }
 .mobile-account-link { display: none; }

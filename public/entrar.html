@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Entre no Duelo64 com um código de acesso enviado por e-mail.">
+    <title>Entrar no Duelo — Duelo64</title>
+    <link rel="icon" type="image/png" href="assets/duelo64-icon-512.png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="auth.css">
+  </head>
+  <body class="auth-page">
+    <header class="auth-header">
+      <a class="auth-brand" href="index.html" aria-label="Voltar para o início do Duelo64">
+        <img src="assets/duelo64-logo-transparent.png" alt="Duelo64">
+      </a>
+      <a class="auth-back-link" href="index.html">
+        <i data-lucide="arrow-left" aria-hidden="true"></i>
+        Voltar ao início
+      </a>
+    </header>
+
+    <main class="auth-main">
+      <section class="auth-introduction" aria-labelledby="auth-title">
+        <span class="eyebrow">ACESSO AO JOGADOR</span>
+        <h1 id="auth-title">Entre no duelo.</h1>
+        <p>Um código, nenhuma senha. Confirme seu e-mail e volte para a arena em poucos segundos.</p>
+      </section>
+
+      <section class="auth-card" aria-labelledby="auth-card-title" aria-live="polite">
+        <div class="auth-card-meta">
+          <span>DUELO64 · IDENTIFICAÇÃO</span>
+          <span aria-hidden="true">Nº ———</span>
+        </div>
+
+        <section class="auth-step" data-auth-step="email">
+          <header class="auth-step-header">
+            <span class="auth-step-number">01</span>
+            <div>
+              <h2 id="auth-card-title">Qual é o seu e-mail?</h2>
+              <p>Enviaremos um código de acesso com 6 dígitos.</p>
+            </div>
+          </header>
+
+          <form class="auth-form" id="request-code-form" novalidate>
+            <div class="auth-field">
+              <label for="auth-email">E-mail</label>
+              <input
+                id="auth-email"
+                name="email"
+                type="email"
+                autocomplete="email"
+                inputmode="email"
+                maxlength="320"
+                placeholder="voce@email.com"
+                required
+              >
+              <small class="field-error" id="email-error"></small>
+            </div>
+
+            <button class="button button-primary auth-submit" type="submit">
+              Receber código
+              <i data-lucide="arrow-right" aria-hidden="true"></i>
+            </button>
+          </form>
+
+          <p class="auth-helper">Se sua conta ainda não existir, ela será criada após a confirmação.</p>
+        </section>
+
+        <section class="auth-step" data-auth-step="code" hidden>
+          <header class="auth-step-header">
+            <span class="auth-step-number">02</span>
+            <div>
+              <h2>Confira seu e-mail</h2>
+              <p>Digite o código enviado para <strong id="code-recipient">seu e-mail</strong>.</p>
+            </div>
+          </header>
+
+          <form class="auth-form" id="verify-code-form" novalidate>
+            <div class="auth-field">
+              <label for="auth-code">Código de acesso</label>
+              <input
+                id="auth-code"
+                name="code"
+                class="auth-code-input"
+                type="text"
+                autocomplete="one-time-code"
+                inputmode="numeric"
+                pattern="[0-9]{6}"
+                minlength="6"
+                maxlength="6"
+                placeholder="000000"
+                required
+              >
+              <small class="field-error" id="code-error"></small>
+            </div>
+
+            <button class="button button-primary auth-submit" type="submit">
+              Confirmar acesso
+              <i data-lucide="arrow-right" aria-hidden="true"></i>
+            </button>
+          </form>
+
+          <div class="auth-secondary-actions">
+            <button type="button" id="resend-code-button">Reenviar código</button>
+            <button type="button" id="change-email-button">Trocar e-mail</button>
+          </div>
+
+          <p class="auth-helper">O código expira em 5 minutos e só pode ser usado uma vez.</p>
+        </section>
+
+        <section class="auth-step" data-auth-step="profile" hidden>
+          <header class="auth-step-header">
+            <span class="auth-step-number">03</span>
+            <div>
+              <h2>Como devemos te chamar?</h2>
+              <p>Escolha o nome que os outros jogadores verão na arena.</p>
+            </div>
+          </header>
+
+          <form class="auth-form" id="complete-profile-form" novalidate>
+            <div class="auth-field">
+              <label for="auth-nickname">Nickname</label>
+              <div class="nickname-control">
+                <span aria-hidden="true">@</span>
+                <input
+                  id="auth-nickname"
+                  name="nickname"
+                  type="text"
+                  autocomplete="nickname"
+                  minlength="3"
+                  maxlength="24"
+                  pattern="[A-Za-z0-9_]{3,24}"
+                  placeholder="seunome64"
+                  required
+                >
+              </div>
+              <small class="field-hint">Use de 3 a 24 caracteres, números ou underline.</small>
+              <small class="field-error" id="nickname-error"></small>
+              <small class="nickname-availability" id="nickname-availability" role="status"></small>
+            </div>
+
+            <button class="button button-primary auth-submit" type="submit">
+              Concluir perfil
+              <i data-lucide="check" aria-hidden="true"></i>
+            </button>
+          </form>
+        </section>
+
+        <p class="auth-status" id="auth-status" role="status"></p>
+      </section>
+    </main>
+
+    <footer class="auth-footer">
+      <p>Ao continuar, você concorda com os <a href="termos.html">Termos</a> e a <a href="priv.html">Política de Privacidade</a>.</p>
+      <span>Duelo64 — pense, mova e vença.</span>
+    </footer>
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="auth.js"></script>
+  </body>
+</html>
