@@ -41,10 +41,57 @@
               <button class="menu-choice" type="button" disabled title="Inglês em breve">EN</button>
             </div>
           </section>
-          <a class="mobile-account-link mobile-signup-link" href="entrar.html">Entrar no Duelo</a>
+          <a
+            class="mobile-account-link mobile-signup-link"
+            id="mobile-auth-link"
+            href="entrar.html"
+          >
+            Entrar no Duelo
+          </a>
+
+          <button
+            class="mobile-logout-button"
+            id="mobile-logout-button"
+            type="button"
+            hidden
+          >
+            Sair da conta
+          </button>
         </nav>
         <div class="header-actions">
-          <a class="button button-primary header-signup" href="entrar.html">Entrar no Duelo</a>
+          <a
+            class="button button-primary header-signup"
+            id="header-auth-link"
+            href="entrar.html"
+          >
+            Entrar no Duelo
+          </a>
+
+          <div class="user-account" id="user-account" hidden>
+            <button
+              class="user-account-button"
+              id="user-account-button"
+              type="button"
+              aria-expanded="false"
+              aria-controls="user-account-menu"
+            >
+              <span class="user-account-avatar" id="user-account-avatar">K</span>
+              <span class="user-account-nickname" id="user-account-nickname">@jogador</span>
+              <i data-lucide="chevron-down" aria-hidden="true"></i>
+            </button>
+
+            <div class="user-account-menu" id="user-account-menu" hidden>
+              <div class="user-account-details">
+                <strong id="user-menu-nickname">@jogador</strong>
+                <small id="user-menu-email">email@exemplo.com</small>
+              </div>
+
+              <button class="user-logout-button" id="user-logout-button" type="button">
+                <i data-lucide="log-out" aria-hidden="true"></i>
+                Sair da conta
+              </button>
+            </div>
+          </div>
         </div>
         <button class="menu-button" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="control-panel">
           <i data-lucide="menu" aria-hidden="true"></i>
@@ -147,33 +194,6 @@
       </footer>
     </main>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-    <script>
-      if (window.lucide) window.lucide.createIcons();
-      const header = document.querySelector(".site-header");
-      const menuButton = document.querySelector(".menu-button");
-      menuButton?.addEventListener("click", () => {
-        const isOpen = header.classList.toggle("menu-open");
-        menuButton.setAttribute("aria-expanded", String(isOpen));
-      });
-      document.querySelectorAll(".top-navigation a").forEach((link) => {
-        link.addEventListener("click", () => {
-          header.classList.remove("menu-open");
-          menuButton?.setAttribute("aria-expanded", "false");
-        });
-      });
-      document.addEventListener("click", (event) => {
-        if (!header.contains(event.target)) {
-          header.classList.remove("menu-open");
-          menuButton?.setAttribute("aria-expanded", "false");
-        }
-      });
-      document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") {
-          header.classList.remove("menu-open");
-          menuButton?.setAttribute("aria-expanded", "false");
-          menuButton?.focus();
-        }
-      });
-    </script>
+    <script src="index.js"></script>
   </body>
 </html>

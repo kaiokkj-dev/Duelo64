@@ -58,8 +58,12 @@ public class User {
     }
 
     public void registerLogin() {
-    lastLoginAt = Instant.now();
-}
+        lastLoginAt = Instant.now();
+    }
+
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
+    }
 
     public UUID getId() {
         return id;
@@ -89,4 +93,3 @@ public class User {
         return lastLoginAt;
     }
 }
-
