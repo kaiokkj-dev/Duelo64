@@ -65,6 +65,10 @@ public class User {
         this.nickname = nickname;
     }
 
+    public void updateAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
+    }
+
     public UUID getId() {
         return id;
     }

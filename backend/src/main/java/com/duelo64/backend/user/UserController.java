@@ -3,17 +3,22 @@ package com.duelo64.backend.user;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.duelo64.backend.auth.AuthUserResponse;
+import com.duelo64.backend.shared.ratelimit.ApiRateLimiter;
 
 import jakarta.validation.Valid;
 
@@ -23,13 +28,16 @@ public class UserController {
 
         private final UserRepository userRepository;
         private final UserService userService;
+        private final ApiRateLimiter apiRateLimiter;
 
         public UserController(
                         UserRepository userRepository,
-                        UserService userService) {
+                        UserService userService,
+                        ApiRateLimiter apiRateLimiter) {
 
                 this.userRepository = userRepository;
                 this.userService = userService;
+                this.apiRateLimiter = apiRateLimiter;
         }
 
         @GetMapping("/me")
@@ -55,9 +63,29 @@ public class UserController {
 
                 UUID userId = UUID.fromString(jwt.getSubject());
 
+                apiRateLimiter.checkProfileUpdate(userId);
+
                 User user = userService.updateProfile(
                                 userId,
-                                request.nickname());
+                                request.nickname(),
+                                request.avatarUrl());
+
+                return ResponseEntity.ok(
+                                AuthUserResponse.from(user));
+        }
+
+        @PostMapping(
+                        value = "/me/avatar",
+                        consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+        public ResponseEntity<AuthUserResponse> uploadAvatar(
+                        @AuthenticationPrincipal Jwt jwt,
+                        @RequestPart("avatar") MultipartFile avatar) {
+
+                UUID userId = UUID.fromString(jwt.getSubject());
+
+                apiRateLimiter.checkAvatarUpload(userId);
+
+                User user = userService.updateAvatar(userId, avatar);
 
                 return ResponseEntity.ok(
                                 AuthUserResponse.from(user));

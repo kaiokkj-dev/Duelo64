@@ -486,6 +486,15 @@
     text-align: center;
   }
 }
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px #211710 inset;
+    -webkit-text-fill-color: #f5f2ee;
+    caret-color: #f5f2ee;
+    border: 1px solid #ff6b0a;
+    transition: background-color 5000s ease-in-out 0s;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .auth-back-link,

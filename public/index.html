@@ -46,7 +46,12 @@
             id="mobile-auth-link"
             href="entrar.html"
           >
-            Entrar no Duelo
+            <span class="mobile-account-avatar" id="mobile-account-avatar" hidden>K</span>
+            <span class="mobile-account-copy">
+              <small id="mobile-account-caption" hidden>Minha conta</small>
+              <strong id="mobile-account-name">Entrar no Duelo</strong>
+            </span>
+            <i class="mobile-account-chevron" id="mobile-account-chevron" data-lucide="chevron-right" aria-hidden="true" hidden></i>
           </a>
 
           <button
@@ -85,6 +90,11 @@
                 <strong id="user-menu-nickname">@jogador</strong>
                 <small id="user-menu-email">email@exemplo.com</small>
               </div>
+
+              <a class="user-profile-link" href="perfil.html">
+                <i data-lucide="user-round" aria-hidden="true"></i>
+                Ver meu perfil
+              </a>
 
               <button class="user-logout-button" id="user-logout-button" type="button">
                 <i data-lucide="log-out" aria-hidden="true"></i>

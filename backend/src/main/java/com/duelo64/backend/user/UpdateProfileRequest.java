@@ -16,7 +16,13 @@ public record UpdateProfileRequest(
                 regexp = "^[A-Za-z0-9_]+$",
                 message = "Use somente letras, números e underline."
         )
-        String nickname
+        String nickname,
+
+        @Size(
+                max = 2048,
+                message = "A URL do avatar é muito longa."
+        )
+        String avatarUrl
 
 ) {
 }

@@ -2,6 +2,11 @@ spring:
   application:
     name: Duelo64 API
 
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 3MB
+
   config:
     import: optional:file:.env[.properties]
 

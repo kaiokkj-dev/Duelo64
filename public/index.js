@@ -6,6 +6,10 @@ const header = document.querySelector(".site-header");
 const menuButton = document.querySelector(".menu-button");
 const headerAuthLink = document.querySelector("#header-auth-link");
 const mobileAuthLink = document.querySelector("#mobile-auth-link");
+const mobileAccountAvatar = document.querySelector("#mobile-account-avatar");
+const mobileAccountCaption = document.querySelector("#mobile-account-caption");
+const mobileAccountName = document.querySelector("#mobile-account-name");
+const mobileAccountChevron = document.querySelector("#mobile-account-chevron");
 const mobileLogoutButton = document.querySelector("#mobile-logout-button");
 const userAccount = document.querySelector("#user-account");
 const userAccountButton = document.querySelector("#user-account-button");
@@ -60,8 +64,25 @@ function showLoggedOutState() {
   }
 
   if (mobileAuthLink) {
-    mobileAuthLink.textContent = "Entrar no Duelo";
     mobileAuthLink.href = "entrar.html";
+    mobileAuthLink.classList.remove("authenticated");
+  }
+
+  if (mobileAccountAvatar) {
+    mobileAccountAvatar.hidden = true;
+    mobileAccountAvatar.textContent = "J";
+  }
+
+  if (mobileAccountCaption) {
+    mobileAccountCaption.hidden = true;
+  }
+
+  if (mobileAccountName) {
+    mobileAccountName.textContent = "Entrar no Duelo";
+  }
+
+  if (mobileAccountChevron) {
+    mobileAccountChevron.hidden = true;
   }
 
   if (mobileLogoutButton) {
@@ -85,7 +106,14 @@ function showAuthenticatedState(user) {
   }
 
   if (userAccountAvatar) {
-    userAccountAvatar.textContent = avatarLetter;
+    if (user.avatarUrl) {
+      const image = document.createElement("img");
+      image.src = user.avatarUrl;
+      image.alt = "";
+      userAccountAvatar.replaceChildren(image);
+    } else {
+      userAccountAvatar.textContent = avatarLetter;
+    }
   }
 
   if (userAccountNickname) {
@@ -101,8 +129,33 @@ function showAuthenticatedState(user) {
   }
 
   if (mobileAuthLink) {
-    mobileAuthLink.textContent = nicknameLabel;
-    mobileAuthLink.removeAttribute("href");
+    mobileAuthLink.href = "perfil.html";
+    mobileAuthLink.classList.add("authenticated");
+  }
+
+  if (mobileAccountAvatar) {
+    mobileAccountAvatar.hidden = false;
+
+    if (user.avatarUrl) {
+      const image = document.createElement("img");
+      image.src = user.avatarUrl;
+      image.alt = "";
+      mobileAccountAvatar.replaceChildren(image);
+    } else {
+      mobileAccountAvatar.textContent = avatarLetter;
+    }
+  }
+
+  if (mobileAccountCaption) {
+    mobileAccountCaption.hidden = false;
+  }
+
+  if (mobileAccountName) {
+    mobileAccountName.textContent = nicknameLabel;
+  }
+
+  if (mobileAccountChevron) {
+    mobileAccountChevron.hidden = false;
   }
 
   if (mobileLogoutButton) {
@@ -204,12 +257,6 @@ function logout() {
 
 userLogoutButton?.addEventListener("click", logout);
 mobileLogoutButton?.addEventListener("click", logout);
-
-mobileAuthLink?.addEventListener("click", (event) => {
-  if (!mobileAuthLink.hasAttribute("href")) {
-    event.preventDefault();
-  }
-});
 
 document.addEventListener("click", (event) => {
   if (header && !header.contains(event.target)) {

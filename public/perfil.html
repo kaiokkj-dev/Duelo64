@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Perfil do jogador no Duelo64." />
+    <title>Meu perfil — Duelo64</title>
+    <link rel="icon" type="image/png" href="assets/duelo64-icon-512.png" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="perfil.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner profile-header-inner">
+        <a
+          class="header-brand"
+          href="index.html"
+          aria-label="Duelo64 — Página inicial"
+        >
+          <img
+            class="brand-logo"
+            src="assets/duelo64-logo-transparent.png"
+            alt="Duelo64"
+          />
+        </a>
+
+        <nav class="profile-header-actions" aria-label="Navegação do perfil">
+          <a class="profile-back-link" href="index.html">
+            <i data-lucide="arrow-left" aria-hidden="true"></i>
+            Voltar ao início
+          </a>
+          <button
+            class="profile-logout-button"
+            id="profile-logout-button"
+            type="button"
+          >
+            <i data-lucide="log-out" aria-hidden="true"></i>
+            Sair
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main class="profile-page">
+      <div class="profile-shell">
+        <section class="profile-identity" aria-labelledby="profile-title">
+          <div class="profile-avatar" id="profile-avatar" aria-hidden="true">
+            J
+          </div>
+
+          <div class="profile-identity-copy">
+            <span class="profile-eyebrow">Perfil de jogador</span>
+            <h1 id="profile-title">@jogador</h1>
+            <p id="profile-email">Carregando suas informações...</p>
+          </div>
+
+          <button
+            class="profile-edit-button"
+            id="profile-edit-button"
+            type="button"
+            aria-expanded="false"
+            aria-controls="profile-editor"
+          >
+            <i data-lucide="pencil" aria-hidden="true"></i>
+            Editar perfil
+          </button>
+        </section>
+
+        <section
+          class="profile-editor"
+          id="profile-editor"
+          aria-labelledby="editor-title"
+          hidden
+        >
+          <header class="profile-editor-header">
+            <div>
+              <span class="profile-eyebrow">Personalização</span>
+              <h2 id="editor-title">Editar perfil</h2>
+            </div>
+            <button
+              class="editor-close-button"
+              id="editor-close-button"
+              type="button"
+              aria-label="Fechar edição"
+            >
+              <i data-lucide="x" aria-hidden="true"></i>
+            </button>
+          </header>
+
+          <form id="profile-form" novalidate>
+            <label class="profile-field" for="nickname-input">
+              <span>Nickname</span>
+              <div class="nickname-field-wrap">
+                <span aria-hidden="true">@</span>
+                <input
+                  id="nickname-input"
+                  name="nickname"
+                  type="text"
+                  minlength="3"
+                  maxlength="24"
+                  pattern="[A-Za-z0-9_]+"
+                  autocomplete="nickname"
+                  required
+                />
+              </div>
+              <small
+                >Use de 3 a 24 caracteres: letras, números ou underline.</small
+              >
+            </label>
+
+            <fieldset class="avatar-picker">
+              <legend>Escolha seu avatar</legend>
+              <div class="avatar-grid" id="avatar-grid"></div>
+            </fieldset>
+
+            <div class="avatar-divider"><span>ou</span></div>
+
+            <section
+              class="custom-avatar"
+              aria-labelledby="custom-avatar-title"
+            >
+              <div class="custom-avatar-copy">
+                <strong id="custom-avatar-title">Enviar minha foto</strong>
+                <small>JPEG, PNG ou WebP com no máximo 2 MB.</small>
+              </div>
+
+              <label class="custom-avatar-picker" for="avatar-file-input">
+                <span class="custom-avatar-preview" id="custom-avatar-preview">
+                  <i data-lucide="image-plus" aria-hidden="true"></i>
+                  <img
+                    id="custom-avatar-preview-image"
+                    alt="Pré-visualização da foto escolhida"
+                    hidden
+                  />
+                </span>
+
+                <span class="custom-avatar-action">
+                  <strong>Escolher imagem</strong>
+                  <small id="custom-avatar-file-name"
+                    >Nenhum arquivo selecionado</small
+                  >
+                </span>
+
+                <input
+                  id="avatar-file-input"
+                  name="avatar"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                />
+              </label>
+            </section>
+
+            <p
+              class="profile-form-message"
+              id="profile-form-message"
+              role="status"
+              aria-live="polite"
+            ></p>
+
+            <div class="profile-form-actions">
+              <button
+                class="editor-cancel-button"
+                id="editor-cancel-button"
+                type="button"
+              >
+                Cancelar
+              </button>
+              <button
+                class="button button-primary editor-save-button"
+                id="editor-save-button"
+                type="submit"
+              >
+                Salvar alterações
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section class="profile-stats" aria-label="Estatísticas do jogador">
+          <article class="stat-card stat-card-ranking">
+            <span class="stat-label">Ranking atual</span>
+            <strong id="profile-ranking">Não classificado</strong>
+            <small>Jogue partidas ranqueadas para entrar no ranking.</small>
+          </article>
+
+          <article class="stat-card">
+            <span class="stat-label">Partidas</span>
+            <strong id="profile-matches">0</strong>
+          </article>
+
+          <article class="stat-card">
+            <span class="stat-label">Vitórias</span>
+            <strong id="profile-wins">0</strong>
+          </article>
+
+          <article class="stat-card">
+            <span class="stat-label">Derrotas</span>
+            <strong id="profile-losses">0</strong>
+          </article>
+
+          <article class="stat-card">
+            <span class="stat-label">Empates</span>
+            <strong id="profile-draws">0</strong>
+          </article>
+
+          <article class="stat-card">
+            <span class="stat-label">Taxa de vitória</span>
+            <strong id="profile-win-rate">0%</strong>
+          </article>
+        </section>
+
+        <section class="profile-history" aria-labelledby="history-title">
+          <header class="history-header">
+            <div>
+              <span class="profile-eyebrow">Atividade</span>
+              <h2 id="history-title">Partidas recentes</h2>
+            </div>
+            <span class="history-status">Histórico em breve</span>
+          </header>
+
+          <div class="history-empty">
+            <span class="history-empty-icon"
+              ><i data-lucide="swords" aria-hidden="true"></i
+            ></span>
+            <strong>Seu primeiro duelo começa aqui.</strong>
+            <p>
+              Quando você concluir uma partida, o resultado aparecerá neste
+              histórico.
+            </p>
+            <a class="button button-primary" href="index.html#jogos"
+              >Escolher um jogo</a
+            >
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="perfil.js"></script>
+  </body>
+</html>
