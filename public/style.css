@@ -442,6 +442,25 @@ a:focus-visible, button:focus-visible { outline: 3px solid rgb(249 115 22 / 38%)
   position: relative;
 }
 
+.shared-account-login {
+  min-height: 44px;
+  padding: 0 15px;
+  display: inline-flex;
+  align-items: center;
+  color: #fff;
+  border: 1px solid var(--laranja);
+  border-radius: 7px;
+  background: var(--laranja);
+  box-shadow: 0 3px 0 #8f3908;
+  font-size: 11px;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.shared-account-login:hover {
+  background: var(--laranja-hover);
+}
+
 .user-account-button {
   min-height: 44px;
   padding: 5px 12px 5px 6px;

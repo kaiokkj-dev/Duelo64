@@ -2,6 +2,29 @@ const API_BASE_URL = "http://localhost:8080/api/v1";
 const TOKEN_STORAGE_KEY = "duelo64.accessToken";
 const USER_STORAGE_KEY = "duelo64.user";
 
+function getSafeReturnUrl() {
+  const requestedDestination = new URLSearchParams(window.location.search).get("returnTo");
+
+  if (!requestedDestination) {
+    return new URL("index.html", window.location.href).href;
+  }
+
+  try {
+    const destination = new URL(requestedDestination, window.location.href);
+    const currentDirectory = new URL("./", window.location.href);
+    const staysInsideApplication = destination.href.startsWith(currentDirectory.href);
+    const usesAllowedProtocol = destination.protocol === "http:" || destination.protocol === "https:";
+
+    if (!staysInsideApplication || !usesAllowedProtocol) {
+      return new URL("index.html", window.location.href).href;
+    }
+
+    return destination.href;
+  } catch {
+    return new URL("index.html", window.location.href).href;
+  }
+}
+
 const state = {
   email: "",
   token: sessionStorage.getItem(TOKEN_STORAGE_KEY) || "",
@@ -131,7 +154,7 @@ function finishAuthentication() {
   setStatus("Acesso confirmado. Entrando no Duelo64...", "success");
 
   window.setTimeout(() => {
-    window.location.href = "index.html";
+    window.location.href = getSafeReturnUrl();
   }, 650);
 }
 

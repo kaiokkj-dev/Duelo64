@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sala de Damas Brasileiras no Duelo64.">
+    <title>Sala de Damas — Duelo64</title>
+    <link rel="icon" type="image/png" href="../../assets/duelo64-icon-512.png">
+    <link rel="stylesheet" href="../../style.css">
+    <link rel="stylesheet" href="room.css">
+  </head>
+  <body>
+    <header class="room-header">
+      <a class="room-brand" href="../index.html"><img src="../../assets/duelo64-logo-transparent.png" alt="Duelo64"></a>
+      <div class="room-meta">
+        <span class="connection-status"><i></i> Conectado</span>
+        <span class="room-code-header" id="room-code-header" hidden>SALA ------</span>
+        <div
+          class="shared-account"
+          data-shared-account
+          data-profile-url="../../perfil.html"
+          data-login-url="../../entrar.html"
+          data-home-url="../../index.html"
+        >
+          <a class="shared-account-login" data-account-login href="../../entrar.html" hidden>Entrar no Duelo</a>
+          <div class="user-account" data-account-auth hidden>
+            <button class="user-account-button" data-account-button type="button" aria-expanded="false">
+              <span class="user-account-avatar" data-account-avatar>J</span>
+              <span class="user-account-nickname" data-account-nickname>@jogador</span>
+              <i data-lucide="chevron-down" aria-hidden="true"></i>
+            </button>
+            <div class="user-account-menu" data-account-panel hidden>
+              <div class="user-account-details">
+                <strong data-account-menu-nickname>@jogador</strong>
+                <small data-account-email>email@exemplo.com</small>
+              </div>
+              <a class="user-profile-link" data-account-profile href="../../perfil.html"><i data-lucide="user-round"></i>Ver meu perfil</a>
+              <button class="user-logout-button" data-account-logout type="button"><i data-lucide="log-out"></i>Sair da conta</button>
+            </div>
+          </div>
+        </div>
+        <button class="room-menu-button" type="button" aria-label="Opções da partida"><i data-lucide="more-horizontal"></i></button>
+      </div>
+    </header>
+
+    <main class="room-page">
+      <section class="match-area">
+        <div class="match-heading">
+          <div><span>DAMAS BRASILEIRAS</span><strong id="match-mode">Partida pública</strong></div>
+          <span class="match-state" id="match-state">Sua vez</span>
+        </div>
+
+        <article class="player player-opponent">
+          <span class="player-photo player-photo-rival">R</span>
+          <span class="player-copy"><strong>Rival</strong><small>Ouro · 1.482</small></span>
+          <time class="player-clock" id="opponent-clock">10:00</time>
+        </article>
+
+        <div class="board-shell">
+          <div class="board-coordinates board-files" aria-hidden="true"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span></div>
+          <div class="room-board" id="room-board" role="grid" aria-label="Tabuleiro de Damas Brasileiras"></div>
+        </div>
+
+        <article class="player player-you">
+          <span class="player-photo" id="player-photo">J</span>
+          <span class="player-copy"><strong id="player-name">Você</strong><small>Prata · 1.264</small></span>
+          <time class="player-clock active" id="player-clock">10:00</time>
+        </article>
+      </section>
+
+      <aside class="match-panel">
+        <section class="panel-section invitation-panel" id="invitation-panel" hidden>
+          <span class="panel-label">SALA PRIVADA</span>
+          <h2>Convide seu adversário</h2>
+          <p>A sala ficará aguardando até seu amigo entrar pelo código.</p>
+          <div class="room-invite-code"><strong id="room-invite-code">------</strong><button id="copy-invite" type="button" aria-label="Copiar código"><i data-lucide="copy"></i></button></div>
+        </section>
+
+        <section class="panel-section match-actions">
+          <span class="panel-label">PARTIDA</span>
+          <div class="action-list">
+            <button type="button"><i data-lucide="handshake"></i><span>Oferecer empate<small>Aguarde sua vez</small></span></button>
+            <button type="button"><i data-lucide="flag"></i><span>Abandonar partida<small>Conta como derrota</small></span></button>
+          </div>
+        </section>
+
+        <section class="panel-section chat-panel">
+          <div class="chat-heading"><span class="panel-label">CHAT DA PARTIDA</span><i data-lucide="message-circle"></i></div>
+          <div class="chat-messages" id="chat-messages">
+            <p class="system-message">Converse com respeito. A partida está sendo preparada.</p>
+          </div>
+          <form class="chat-form" id="chat-form">
+            <input id="chat-input" maxlength="180" placeholder="Escreva uma mensagem..." autocomplete="off">
+            <button type="submit" aria-label="Enviar mensagem"><i data-lucide="send"></i></button>
+          </form>
+        </section>
+      </aside>
+    </main>
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="../../shared/account-menu.js"></script>
+    <script src="room.js"></script>
+  </body>
+</html>
