@@ -11,3 +11,10 @@ spring:
 
   flyway:
     enabled: false
+
+JWT_SECRET: dGVzdC1qd3Qtc2VjcmV0LWR1ZWxvNjQtdGVzdC1rZXktMzI=
+JWT_ISSUER: duelo64-test
+JWT_EXPIRATION_MINUTES: 60
+RESEND_API_KEY: re_test_key
+RESEND_FROM_EMAIL: Duelo64 <teste@duelo64.local>
+CLOUDINARY_URL: cloudinary://123456789012345:test_secret@test-cloud

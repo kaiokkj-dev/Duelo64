@@ -1,6 +1,8 @@
 package com.duelo64.backend.auth;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.resend.Resend;
@@ -10,18 +12,31 @@ import com.resend.services.emails.model.CreateEmailOptions;
 @Service
 public class AuthEmailService {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(AuthEmailService.class);
+
     private final Resend resend;
     private final String fromEmail;
+    private final boolean emailDeliveryEnabled;
 
     public AuthEmailService(
             Resend resend,
-            @Value("${RESEND_FROM_EMAIL}") String fromEmail) {
+            @Value("${RESEND_FROM_EMAIL}") String fromEmail,
+            @Value("${AUTH_EMAIL_DELIVERY_ENABLED:true}") boolean emailDeliveryEnabled) {
 
         this.resend = resend;
         this.fromEmail = fromEmail;
+        this.emailDeliveryEnabled = emailDeliveryEnabled;
     }
 
     public void sendCode(String recipientEmail, String code) {
+        if (!emailDeliveryEnabled) {
+            LOGGER.warn(
+                    "Codigo de acesso Duelo64 para {}: {}. Envio por e-mail desativado neste ambiente.",
+                    recipientEmail,
+                    code);
+            return;
+        }
+
         CreateEmailOptions email = CreateEmailOptions.builder()
                 .from(fromEmail)
                 .to(recipientEmail)

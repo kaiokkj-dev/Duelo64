@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.duelo64.backend.auth.InvalidAuthCodeException;
+import com.duelo64.backend.game.checkers.domain.InvalidCheckersMoveException;
+import com.duelo64.backend.game.room.RoomNotFoundException;
+import com.duelo64.backend.game.room.RoomUnavailableException;
 import com.duelo64.backend.user.AvatarUploadException;
 import com.duelo64.backend.user.InvalidAvatarException;
 import com.duelo64.backend.user.NicknameUnavailableException;
@@ -94,6 +97,45 @@ public class ApiExceptionHandler {
 
                 return ResponseEntity
                                 .status(HttpStatus.CONFLICT)
+                                .body(response);
+        }
+
+        @ExceptionHandler(RoomNotFoundException.class)
+        public ResponseEntity<ApiErrorResponse> handleRoomNotFound(
+                        RoomNotFoundException exception) {
+
+                ApiErrorResponse response = new ApiErrorResponse(
+                                "ROOM_NOT_FOUND",
+                                exception.getMessage());
+
+                return ResponseEntity
+                                .status(HttpStatus.NOT_FOUND)
+                                .body(response);
+        }
+
+        @ExceptionHandler(RoomUnavailableException.class)
+        public ResponseEntity<ApiErrorResponse> handleRoomUnavailable(
+                        RoomUnavailableException exception) {
+
+                ApiErrorResponse response = new ApiErrorResponse(
+                                "ROOM_UNAVAILABLE",
+                                exception.getMessage());
+
+                return ResponseEntity
+                                .status(HttpStatus.CONFLICT)
+                                .body(response);
+        }
+
+        @ExceptionHandler(InvalidCheckersMoveException.class)
+        public ResponseEntity<ApiErrorResponse> handleInvalidCheckersMove(
+                        InvalidCheckersMoveException exception) {
+
+                ApiErrorResponse response = new ApiErrorResponse(
+                                "INVALID_CHECKERS_MOVE",
+                                exception.getMessage());
+
+                return ResponseEntity
+                                .status(HttpStatus.BAD_REQUEST)
                                 .body(response);
         }
 }

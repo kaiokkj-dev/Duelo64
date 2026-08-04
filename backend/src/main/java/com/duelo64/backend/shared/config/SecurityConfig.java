@@ -30,8 +30,10 @@ public class SecurityConfig {
                                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
                                 .authorizeHttpRequests(authorize -> authorize
                                                 .requestMatchers(
-                                                                "/api/v1/status",
-                                                                "/actuator/health")
+                                                "/api/v1/status",
+                                                                "/actuator/health",
+                                                                "/ws",
+                                                                "/ws/**")
                                                 .permitAll()
                                                 .requestMatchers(
                                                                 HttpMethod.POST,

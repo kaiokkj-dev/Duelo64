@@ -236,6 +236,7 @@
 .nickname-control {
   display: flex;
   align-items: center;
+  min-height: 54px;
   overflow: hidden;
   border: 1px solid #443c36;
   border-radius: 7px;
@@ -250,19 +251,28 @@
 }
 
 .nickname-control > span {
-  padding-left: 16px;
+  width: 42px;
+  flex: 0 0 42px;
   color: var(--laranja);
   font-size: 19px;
   font-weight: 850;
+  text-align: center;
 }
 
 .nickname-control input {
+  min-width: 0;
+  min-height: 54px;
+  padding: 0 16px 0 0;
+  flex: 1;
   border: 0;
+  outline: 0;
   background: transparent;
   box-shadow: none;
 }
 
+.nickname-control input:hover,
 .nickname-control input:focus {
+  border: 0;
   background: transparent;
   box-shadow: none;
 }
@@ -285,6 +295,11 @@
 
 .nickname-availability {
   color: #4ade80;
+}
+
+.nickname-availability.is-unavailable,
+.nickname-availability.is-invalid {
+  color: #f87171;
 }
 
 .auth-submit {

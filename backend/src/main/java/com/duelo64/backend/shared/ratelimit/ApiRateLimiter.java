@@ -26,12 +26,12 @@ public class ApiRateLimiter {
 
     public ApiRateLimiter(
             RateLimitService rateLimitService,
-            @Value("${RATE_LIMIT_AUTH_REQUEST_IP:10}") int authRequestIpLimit,
-            @Value("${RATE_LIMIT_AUTH_REQUEST_EMAIL:3}") int authRequestEmailLimit,
+            @Value("${RATE_LIMIT_AUTH_REQUEST_IP:40}") int authRequestIpLimit,
+            @Value("${RATE_LIMIT_AUTH_REQUEST_EMAIL:12}") int authRequestEmailLimit,
             @Value("${RATE_LIMIT_AUTH_REQUEST_WINDOW_MINUTES:15}") int authRequestWindowMinutes,
-            @Value("${RATE_LIMIT_AUTH_RESEND_SECONDS:60}") int authResendSeconds,
-            @Value("${RATE_LIMIT_AUTH_VERIFY_IP:30}") int authVerifyIpLimit,
-            @Value("${RATE_LIMIT_AUTH_VERIFY_EMAIL:10}") int authVerifyEmailLimit,
+            @Value("${RATE_LIMIT_AUTH_RESEND_SECONDS:10}") int authResendSeconds,
+            @Value("${RATE_LIMIT_AUTH_VERIFY_IP:80}") int authVerifyIpLimit,
+            @Value("${RATE_LIMIT_AUTH_VERIFY_EMAIL:30}") int authVerifyEmailLimit,
             @Value("${RATE_LIMIT_AUTH_VERIFY_WINDOW_MINUTES:15}") int authVerifyWindowMinutes,
             @Value("${RATE_LIMIT_PROFILE_UPDATE:20}") int profileUpdateLimit,
             @Value("${RATE_LIMIT_AVATAR_UPLOAD:10}") int avatarUploadLimit,

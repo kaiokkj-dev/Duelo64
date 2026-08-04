@@ -13,8 +13,6 @@
     <header class="room-header">
       <a class="room-brand" href="../index.html"><img src="../../assets/duelo64-logo-transparent.png" alt="Duelo64"></a>
       <div class="room-meta">
-        <span class="connection-status"><i></i> Conectado</span>
-        <span class="room-code-header" id="room-code-header" hidden>SALA ------</span>
         <div
           class="shared-account"
           data-shared-account
@@ -39,20 +37,20 @@
             </div>
           </div>
         </div>
-        <button class="room-menu-button" type="button" aria-label="Opções da partida"><i data-lucide="more-horizontal"></i></button>
+        <button class="room-menu-button" type="button" aria-label="Opções da partida"><i data-lucide="menu"></i></button>
       </div>
     </header>
 
     <main class="room-page">
       <section class="match-area">
         <div class="match-heading">
-          <div><span>DAMAS BRASILEIRAS</span><strong id="match-mode">Partida pública</strong></div>
+          <div><span>DAMAS BRASILEIRAS</span><strong id="match-mode" hidden>Partida pública</strong><small id="room-code-header" hidden>SALA ------</small></div>
           <span class="match-state" id="match-state">Sua vez</span>
         </div>
 
         <article class="player player-opponent">
-          <span class="player-photo player-photo-rival">R</span>
-          <span class="player-copy"><strong>Rival</strong><small>Ouro · 1.482</small></span>
+          <span class="player-photo player-photo-rival" id="opponent-photo">R</span>
+          <span class="player-copy"><strong id="opponent-name">Rival</strong><small id="opponent-meta">Aguardando</small></span>
           <time class="player-clock" id="opponent-clock">10:00</time>
         </article>
 
@@ -63,7 +61,7 @@
 
         <article class="player player-you">
           <span class="player-photo" id="player-photo">J</span>
-          <span class="player-copy"><strong id="player-name">Você</strong><small>Prata · 1.264</small></span>
+          <span class="player-copy"><strong id="player-name">Você</strong><small id="player-meta">Prata · 1.264</small></span>
           <time class="player-clock active" id="player-clock">10:00</time>
         </article>
       </section>
@@ -98,6 +96,7 @@
     </main>
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://unpkg.com/@stomp/stompjs@7.1.1/bundles/stomp.umd.min.js"></script>
     <script src="../../shared/account-menu.js"></script>
     <script src="room.js"></script>
   </body>

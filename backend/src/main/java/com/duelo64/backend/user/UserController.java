@@ -9,6 +9,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -54,6 +55,28 @@ public class UserController {
 
                 return ResponseEntity.ok(
                                 AuthUserResponse.from(user));
+        }
+
+        @GetMapping("/nicknames/{nickname}/availability")
+        public ResponseEntity<NicknameAvailabilityResponse> checkNicknameAvailability(
+                        @PathVariable String nickname) {
+
+                String normalizedNickname = nickname.trim();
+
+                if (!normalizedNickname.matches("^[A-Za-z0-9_]{3,24}$")) {
+                        return ResponseEntity.ok(
+                                        new NicknameAvailabilityResponse(
+                                                        normalizedNickname,
+                                                        false));
+                }
+
+                boolean available = !userRepository
+                                .existsByNicknameIgnoreCase(normalizedNickname);
+
+                return ResponseEntity.ok(
+                                new NicknameAvailabilityResponse(
+                                                normalizedNickname,
+                                                available));
         }
 
         @PatchMapping("/me/profile")
