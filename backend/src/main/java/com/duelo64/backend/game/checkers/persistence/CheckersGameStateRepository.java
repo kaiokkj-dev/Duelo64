@@ -11,5 +11,7 @@ public interface CheckersGameStateRepository extends JpaRepository<CheckersGameS
     @EntityGraph(attributePaths = "room")
     Optional<CheckersGameState> findByRoomCode(String code);
 
+    Optional<CheckersGameState> findByRoomId(UUID roomId);
+
     boolean existsByRoomId(UUID roomId);
 }

@@ -88,20 +88,61 @@ public final class CheckersBoard {
     }
 
     public CheckersBoard move(BoardPosition from, BoardPosition to) {
+        BoardPosition captured = Math.abs(to.row() - from.row()) == 2
+                ? new BoardPosition((from.row() + to.row()) / 2, (from.column() + to.column()) / 2)
+                : null;
+        return move(from, to, captured, true);
+    }
+
+    public CheckersBoard move(
+            BoardPosition from,
+            BoardPosition to,
+            BoardPosition captured,
+            boolean promote) {
         Piece[][] nextPieces = copyPieces();
         Piece piece = nextPieces[from.row()][from.column()];
 
         nextPieces[from.row()][from.column()] = null;
 
-        if (Math.abs(to.row() - from.row()) == 2) {
-            int capturedRow = (from.row() + to.row()) / 2;
-            int capturedColumn = (from.column() + to.column()) / 2;
-            nextPieces[capturedRow][capturedColumn] = null;
+        if (captured != null) {
+            nextPieces[captured.row()][captured.column()] = null;
         }
 
-        nextPieces[to.row()][to.column()] = promoteIfNeeded(piece, to);
+        nextPieces[to.row()][to.column()] = promote ? promoteIfNeeded(piece, to) : piece;
 
         return new CheckersBoard(nextPieces);
+    }
+
+    public CheckersBoard promoteAt(BoardPosition position) {
+        Piece piece = pieceAt(position);
+
+        if (piece == null) {
+            return this;
+        }
+
+        Piece promoted = promoteIfNeeded(piece, position);
+        if (promoted == piece) {
+            return this;
+        }
+
+        Piece[][] nextPieces = copyPieces();
+        nextPieces[position.row()][position.column()] = promoted;
+        return new CheckersBoard(nextPieces);
+    }
+
+    public int countPieces(PieceColor color) {
+        int count = 0;
+
+        for (int row = 0; row < SIZE; row++) {
+            for (int column = 0; column < SIZE; column++) {
+                Piece piece = pieces[row][column];
+                if (piece != null && piece.getColor() == color) {
+                    count++;
+                }
+            }
+        }
+
+        return count;
     }
 
     private static void fillPlayableRow(Piece[][] pieces, int row, PieceColor color) {

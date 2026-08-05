@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.duelo64.backend.game.checkers.application.CheckersGameService;
+import com.duelo64.backend.game.checkers.persistence.CheckersGameStateRepository;
 import com.duelo64.backend.user.User;
 import com.duelo64.backend.user.UserRepository;
 
@@ -23,6 +24,7 @@ public class GameRoomService {
     private final GameRoomRepository gameRoomRepository;
     private final UserRepository userRepository;
     private final CheckersGameService checkersGameService;
+    private final CheckersGameStateRepository checkersGameStateRepository;
     private final RoomRealtimePublisher roomRealtimePublisher;
     private final SecureRandom secureRandom = new SecureRandom();
 
@@ -30,11 +32,13 @@ public class GameRoomService {
             GameRoomRepository gameRoomRepository,
             UserRepository userRepository,
             CheckersGameService checkersGameService,
+            CheckersGameStateRepository checkersGameStateRepository,
             RoomRealtimePublisher roomRealtimePublisher) {
 
         this.gameRoomRepository = gameRoomRepository;
         this.userRepository = userRepository;
         this.checkersGameService = checkersGameService;
+        this.checkersGameStateRepository = checkersGameStateRepository;
         this.roomRealtimePublisher = roomRealtimePublisher;
     }
 
@@ -68,6 +72,9 @@ public class GameRoomService {
         }
 
         room.join(guest);
+        checkersGameStateRepository
+                .findByRoomId(room.getId())
+                .ifPresent(state -> state.startClock(room.getStartedAt()));
         roomRealtimePublisher.publish(RoomRealtimeEvent.playerJoined(room));
 
         return room;

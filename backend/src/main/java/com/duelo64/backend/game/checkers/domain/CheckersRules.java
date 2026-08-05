@@ -1,6 +1,13 @@
 package com.duelo64.backend.game.checkers.domain;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class CheckersRules {
+
+    private static final int[][] DIAGONALS = {
+            { -1, -1 }, { -1, 1 }, { 1, -1 }, { 1, 1 }
+    };
 
     public CheckersBoard applyMove(
             CheckersBoard board,
@@ -8,101 +15,88 @@ public class CheckersRules {
             BoardPosition from,
             BoardPosition to) {
 
+        return applyMoveDetailed(board, currentTurn, from, to, null).board();
+    }
+
+    public CheckersMoveResult applyMoveDetailed(
+            CheckersBoard board,
+            PieceColor currentTurn,
+            BoardPosition from,
+            BoardPosition to,
+            BoardPosition forcedPiece) {
+
         validatePositions(from, to);
 
-        Piece piece = board.pieceAt(from);
+        if (forcedPiece != null && !forcedPiece.equals(from)) {
+            throw new InvalidCheckersMoveException("A mesma peca deve continuar a captura.");
+        }
 
+        Piece piece = board.pieceAt(from);
         if (piece == null) {
             throw new InvalidCheckersMoveException("Nao existe peca nessa casa.");
         }
-
         if (piece.getColor() != currentTurn) {
             throw new InvalidCheckersMoveException("Nao e a vez dessa cor jogar.");
         }
-
         if (board.pieceAt(to) != null) {
             throw new InvalidCheckersMoveException("A casa de destino ja esta ocupada.");
         }
-
         if (!CheckersBoard.isDarkSquare(to.row(), to.column())) {
             throw new InvalidCheckersMoveException("A peca precisa parar em uma casa escura.");
         }
 
         int rowDelta = to.row() - from.row();
         int columnDelta = to.column() - from.column();
-
-        if (Math.abs(rowDelta) != Math.abs(columnDelta)) {
-            throw new InvalidCheckersMoveException("A dama se move apenas na diagonal.");
+        if (rowDelta == 0 || Math.abs(rowDelta) != Math.abs(columnDelta)) {
+            throw new InvalidCheckersMoveException("A peca se move apenas na diagonal.");
         }
 
-        if (Math.abs(rowDelta) == 1) {
-            validateSimpleMove(board, currentTurn, piece, rowDelta);
-            return board.move(from, to);
+        List<CaptureOption> requestedOptions = captureOptions(board, from, piece);
+        CaptureOption requestedCapture = requestedOptions.stream()
+                .filter(option -> option.to().equals(to))
+                .findFirst()
+                .orElse(null);
+
+        int requiredCaptureCount = forcedPiece == null
+                ? maximumCaptureCount(board, currentTurn)
+                : maximumCapturesFrom(board, from, piece);
+
+        if (requiredCaptureCount > 0) {
+            if (requestedCapture == null) {
+                throw new InvalidCheckersMoveException("Existe captura obrigatoria disponivel.");
+            }
+
+            CheckersBoard afterCapture = board.move(from, to, requestedCapture.captured(), false);
+            int continuationCount = maximumCapturesFrom(afterCapture, to, piece);
+            int chosenCaptureCount = 1 + continuationCount;
+
+            if (chosenCaptureCount < requiredCaptureCount) {
+                throw new InvalidCheckersMoveException(
+                        "A Lei da Maioria exige a sequencia que captura mais pecas.");
+            }
+
+            boolean mustContinue = continuationCount > 0;
+            CheckersBoard resultingBoard = mustContinue
+                    ? afterCapture
+                    : afterCapture.promoteAt(to);
+
+            return new CheckersMoveResult(resultingBoard, true, mustContinue, to);
         }
 
-        if (Math.abs(rowDelta) == 2) {
-            validateCaptureMove(board, piece, from, to, rowDelta, columnDelta);
-            return board.move(from, to);
-        }
-
-        throw new InvalidCheckersMoveException("Movimento invalido para esta peca.");
+        validateSimpleMove(board, piece, from, to);
+        return new CheckersMoveResult(board.move(from, to, null, true), false, false, to);
     }
 
-    private void validatePositions(BoardPosition from, BoardPosition to) {
-        if (!from.isInsideBoard() || !to.isInsideBoard()) {
-            throw new InvalidCheckersMoveException("A posicao informada esta fora do tabuleiro.");
-        }
-    }
-
-    private void validateSimpleMove(
-            CheckersBoard board,
-            PieceColor currentTurn,
-            Piece piece,
-            int rowDelta) {
-
-        if (hasAnyCapture(board, currentTurn)) {
-            throw new InvalidCheckersMoveException("Existe captura obrigatoria disponivel.");
+    public boolean hasAnyLegalMove(CheckersBoard board, PieceColor color) {
+        if (maximumCaptureCount(board, color) > 0) {
+            return true;
         }
 
-        if (!piece.isKing() && rowDelta != forwardDirection(piece.getColor())) {
-            throw new InvalidCheckersMoveException("Essa peca so pode andar para frente.");
-        }
-    }
-
-    private void validateCaptureMove(
-            CheckersBoard board,
-            Piece piece,
-            BoardPosition from,
-            BoardPosition to,
-            int rowDelta,
-            int columnDelta) {
-
-        if (!piece.isKing() && rowDelta != forwardDirection(piece.getColor()) * 2) {
-            throw new InvalidCheckersMoveException("Essa peca so pode capturar para frente.");
-        }
-
-        BoardPosition capturedPosition = new BoardPosition(
-                (from.row() + to.row()) / 2,
-                (from.column() + to.column()) / 2);
-
-        Piece capturedPiece = board.pieceAt(capturedPosition);
-
-        if (capturedPiece == null) {
-            throw new InvalidCheckersMoveException("Nao existe peca para capturar nesse movimento.");
-        }
-
-        if (capturedPiece.getColor() == piece.getColor()) {
-            throw new InvalidCheckersMoveException("Voce nao pode capturar a propria peca.");
-        }
-    }
-
-    private boolean hasAnyCapture(CheckersBoard board, PieceColor color) {
         for (int row = 0; row < CheckersBoard.SIZE; row++) {
             for (int column = 0; column < CheckersBoard.SIZE; column++) {
                 BoardPosition from = new BoardPosition(row, column);
                 Piece piece = board.pieceAt(from);
-
-                if (piece != null && piece.getColor() == color && canCaptureFrom(board, from, piece)) {
+                if (piece != null && piece.getColor() == color && hasSimpleMove(board, from, piece)) {
                     return true;
                 }
             }
@@ -111,25 +105,136 @@ public class CheckersRules {
         return false;
     }
 
-    private boolean canCaptureFrom(CheckersBoard board, BoardPosition from, Piece piece) {
-        int[][] directions = piece.isKing()
-                ? new int[][] { { -2, -2 }, { -2, 2 }, { 2, -2 }, { 2, 2 } }
-                : new int[][] { { forwardDirection(piece.getColor()) * 2, -2 },
-                        { forwardDirection(piece.getColor()) * 2, 2 } };
+    public int maximumCaptureCount(CheckersBoard board, PieceColor color) {
+        int maximum = 0;
 
-        for (int[] direction : directions) {
-            BoardPosition to = new BoardPosition(from.row() + direction[0], from.column() + direction[1]);
+        for (int row = 0; row < CheckersBoard.SIZE; row++) {
+            for (int column = 0; column < CheckersBoard.SIZE; column++) {
+                BoardPosition from = new BoardPosition(row, column);
+                Piece piece = board.pieceAt(from);
+                if (piece != null && piece.getColor() == color) {
+                    maximum = Math.max(maximum, maximumCapturesFrom(board, from, piece));
+                }
+            }
+        }
 
-            if (!to.isInsideBoard() || board.pieceAt(to) != null) {
+        return maximum;
+    }
+
+    private int maximumCapturesFrom(CheckersBoard board, BoardPosition from, Piece piece) {
+        int maximum = 0;
+
+        for (CaptureOption option : captureOptions(board, from, piece)) {
+            CheckersBoard next = board.move(from, option.to(), option.captured(), false);
+            maximum = Math.max(maximum, 1 + maximumCapturesFrom(next, option.to(), piece));
+        }
+
+        return maximum;
+    }
+
+    private List<CaptureOption> captureOptions(CheckersBoard board, BoardPosition from, Piece piece) {
+        return piece.isKing()
+                ? kingCaptureOptions(board, from, piece)
+                : manCaptureOptions(board, from, piece);
+    }
+
+    private List<CaptureOption> manCaptureOptions(CheckersBoard board, BoardPosition from, Piece piece) {
+        List<CaptureOption> options = new ArrayList<>();
+
+        for (int[] direction : DIAGONALS) {
+            BoardPosition captured = new BoardPosition(
+                    from.row() + direction[0],
+                    from.column() + direction[1]);
+            BoardPosition to = new BoardPosition(
+                    from.row() + direction[0] * 2,
+                    from.column() + direction[1] * 2);
+
+            if (!captured.isInsideBoard() || !to.isInsideBoard() || board.pieceAt(to) != null) {
                 continue;
             }
 
-            BoardPosition middle = new BoardPosition(
-                    (from.row() + to.row()) / 2,
-                    (from.column() + to.column()) / 2);
-            Piece capturedPiece = board.pieceAt(middle);
-
+            Piece capturedPiece = board.pieceAt(captured);
             if (capturedPiece != null && capturedPiece.getColor() != piece.getColor()) {
+                options.add(new CaptureOption(to, captured));
+            }
+        }
+
+        return options;
+    }
+
+    private List<CaptureOption> kingCaptureOptions(CheckersBoard board, BoardPosition from, Piece piece) {
+        List<CaptureOption> options = new ArrayList<>();
+
+        for (int[] direction : DIAGONALS) {
+            BoardPosition captured = null;
+            int row = from.row() + direction[0];
+            int column = from.column() + direction[1];
+
+            while (new BoardPosition(row, column).isInsideBoard()) {
+                BoardPosition position = new BoardPosition(row, column);
+                Piece occupant = board.pieceAt(position);
+
+                if (occupant == null) {
+                    if (captured != null) {
+                        options.add(new CaptureOption(position, captured));
+                    }
+                } else if (occupant.getColor() == piece.getColor() || captured != null) {
+                    break;
+                } else {
+                    captured = position;
+                }
+
+                row += direction[0];
+                column += direction[1];
+            }
+        }
+
+        return options;
+    }
+
+    private void validateSimpleMove(
+            CheckersBoard board,
+            Piece piece,
+            BoardPosition from,
+            BoardPosition to) {
+
+        int rowDelta = to.row() - from.row();
+        int columnDelta = to.column() - from.column();
+
+        if (!piece.isKing()) {
+            if (Math.abs(columnDelta) != 1 || rowDelta != forwardDirection(piece.getColor())) {
+                throw new InvalidCheckersMoveException("Essa pedra so pode andar uma casa para frente.");
+            }
+            return;
+        }
+
+        int rowStep = Integer.signum(rowDelta);
+        int columnStep = Integer.signum(columnDelta);
+        int row = from.row() + rowStep;
+        int column = from.column() + columnStep;
+
+        while (row != to.row()) {
+            if (board.pieceAt(new BoardPosition(row, column)) != null) {
+                throw new InvalidCheckersMoveException("A dama nao pode atravessar outra peca.");
+            }
+            row += rowStep;
+            column += columnStep;
+        }
+    }
+
+    private boolean hasSimpleMove(CheckersBoard board, BoardPosition from, Piece piece) {
+        int[][] directions = piece.isKing()
+                ? DIAGONALS
+                : new int[][] {
+                        { forwardDirection(piece.getColor()), -1 },
+                        { forwardDirection(piece.getColor()), 1 }
+                };
+
+        for (int[] direction : directions) {
+            BoardPosition to = new BoardPosition(
+                    from.row() + direction[0],
+                    from.column() + direction[1]);
+            if (to.isInsideBoard() && board.pieceAt(to) == null) {
                 return true;
             }
         }
@@ -137,7 +242,16 @@ public class CheckersRules {
         return false;
     }
 
+    private void validatePositions(BoardPosition from, BoardPosition to) {
+        if (!from.isInsideBoard() || !to.isInsideBoard()) {
+            throw new InvalidCheckersMoveException("A posicao informada esta fora do tabuleiro.");
+        }
+    }
+
     private int forwardDirection(PieceColor color) {
         return color == PieceColor.WHITE ? -1 : 1;
+    }
+
+    private record CaptureOption(BoardPosition to, BoardPosition captured) {
     }
 }

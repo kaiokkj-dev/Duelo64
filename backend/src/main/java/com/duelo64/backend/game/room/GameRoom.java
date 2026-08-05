@@ -99,6 +99,15 @@ public class GameRoom {
         this.startedAt = Instant.now();
     }
 
+    public void finish() {
+        if (status == RoomStatus.FINISHED) {
+            return;
+        }
+
+        this.status = RoomStatus.FINISHED;
+        this.finishedAt = Instant.now();
+    }
+
     public boolean isFull() {
         return guest != null;
     }

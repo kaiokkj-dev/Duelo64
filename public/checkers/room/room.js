@@ -34,6 +34,19 @@ let roomStatus = "WAITING";
 let playerColor = "WHITE";
 let isSubmittingMove = false;
 let stompClient = null;
+let matchDurationSeconds = matchTime * 60;
+let whiteRemainingSeconds = matchDurationSeconds;
+let blackRemainingSeconds = matchDurationSeconds;
+let timerInterval = null;
+let lastTimerTick = Date.now();
+let gameFinished = false;
+let timeoutRefreshRequested = false;
+let forcedCaptureRow = null;
+let forcedCaptureColumn = null;
+let winnerColor = null;
+let finishReason = null;
+
+
 
 function requireAuthentication() {
   if (sessionStorage.getItem(TOKEN_STORAGE_KEY)) return true;
@@ -133,6 +146,7 @@ function updatePlayersFromRoom(room) {
   const opponent = isHost ? room.guest : room.host;
 
   playerColor = isHost ? "WHITE" : "BLACK";
+  renderBoardCoordinates();
 
   if (you) {
     playerName.textContent = nicknameLabel(you);
@@ -154,9 +168,7 @@ function updatePlayersFromRoom(room) {
 function configureRoom() {
   matchModeElement.hidden = true;
 
-  const formattedTime = `${String(matchTime).padStart(2, "0")}:00`;
-  playerClock.textContent = formattedTime;
-  opponentClock.textContent = formattedTime;
+  setClockDuration(matchTime);
 
   if (mode !== "private") return;
 
@@ -185,10 +197,106 @@ function syncBoardFromState(state) {
   });
 
   currentTurn = state.currentTurn;
+  whiteRemainingSeconds = Number(state.whiteRemainingMillis) / 1000;
+  blackRemainingSeconds = Number(state.blackRemainingMillis) / 1000;
+  forcedCaptureRow = state.forcedCaptureRow;
+  forcedCaptureColumn = state.forcedCaptureColumn;
+  winnerColor = state.winnerColor;
+  finishReason = state.finishReason;
+  gameFinished = state.status === "FINISHED";
+  timeoutRefreshRequested = false;
+
+  if (gameFinished) {
+    roomStatus = "FINISHED";
+  }
+
   updateTurnLabel();
+  startClock();
   selectedCell = null;
   clearHighlights();
   renderBoard();
+
+  if (state.mustContinueCapture && forcedCaptureRow != null && forcedCaptureColumn != null) {
+    selectedCell = { row: forcedCaptureRow, column: forcedCaptureColumn };
+    showMoves(forcedCaptureRow, forcedCaptureColumn);
+    matchState.textContent = "Continue capturando";
+  }
+}
+
+
+function setClockDuration(minutes) {
+  matchDurationSeconds = Math.max(1, Number(minutes) || matchTime) * 60;
+  whiteRemainingSeconds = matchDurationSeconds;
+  blackRemainingSeconds = matchDurationSeconds;
+  renderClocks();
+}
+
+function formatClock(totalSeconds) {
+  const safeSeconds = Math.max(0, Math.ceil(totalSeconds));
+  const minutes = Math.floor(safeSeconds / 60);
+  const seconds = safeSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function renderClocks() {
+  const playerSeconds = playerColor === "WHITE" ? whiteRemainingSeconds : blackRemainingSeconds;
+  const opponentSeconds = playerColor === "WHITE" ? blackRemainingSeconds : whiteRemainingSeconds;
+
+  playerClock.textContent = formatClock(playerSeconds);
+  opponentClock.textContent = formatClock(opponentSeconds);
+}
+
+function stopClock() {
+  if (!timerInterval) return;
+
+  window.clearInterval(timerInterval);
+  timerInterval = null;
+}
+
+function tickClock() {
+  if (roomStatus !== "IN_PROGRESS") {
+    stopClock();
+    renderClocks();
+    return;
+  }
+
+  const now = Date.now();
+  const elapsedSeconds = (now - lastTimerTick) / 1000;
+  lastTimerTick = now;
+
+  if (currentTurn === "WHITE") {
+    whiteRemainingSeconds = Math.max(0, whiteRemainingSeconds - elapsedSeconds);
+  } else {
+    blackRemainingSeconds = Math.max(0, blackRemainingSeconds - elapsedSeconds);
+  }
+
+  renderClocks();
+
+  if (whiteRemainingSeconds <= 0 || blackRemainingSeconds <= 0) {
+    stopClock();
+    gameFinished = true;
+    updateTurnLabel(currentTurn === playerColor ? "Tempo esgotado — derrota" : "Tempo esgotado — vitória");
+
+    if (!timeoutRefreshRequested) {
+      timeoutRefreshRequested = true;
+      loadGameState();
+    }
+  }
+}
+
+function startClock() {
+  renderClocks();
+
+  if (roomStatus !== "IN_PROGRESS") {
+    stopClock();
+    return;
+  }
+
+  lastTimerTick = Date.now();
+
+  if (timerInterval) return;
+
+  timerInterval = window.setInterval(tickClock, 1000);
 }
 
 function updateTurnLabel(message) {
@@ -200,6 +308,19 @@ function updateTurnLabel(message) {
   if (roomStatus === "WAITING") {
     matchState.textContent = "Aguardando rival";
     playerClock.classList.add("active");
+    opponentClock.classList.remove("active");
+    return;
+  }
+
+  if (roomStatus === "FINISHED" || gameFinished) {
+    const playerWon = winnerColor === playerColor;
+    const reasonLabel = finishReason === "TIMEOUT"
+      ? "por tempo"
+      : finishReason === "NO_PIECES"
+        ? "— rival sem peças"
+        : "— rival sem jogadas";
+    matchState.textContent = playerWon ? `Você venceu ${reasonLabel}` : `Você perdeu ${reasonLabel}`;
+    playerClock.classList.remove("active");
     opponentClock.classList.remove("active");
     return;
   }
@@ -237,9 +358,8 @@ async function loadPrivateRoom() {
     const safeCode = room.code || roomCode;
     roomStatus = room.status;
     updatePlayersFromRoom(room);
-    const formattedTime = `${String(room.timeControlMinutes).padStart(2, "0")}:00`;
-    playerClock.textContent = formattedTime;
-    opponentClock.textContent = formattedTime;
+    updateInvitationPanel(room);
+    setClockDuration(room.timeControlMinutes);
     matchModeElement.hidden = true;
     roomCodeHeader.hidden = false;
     roomCodeHeader.textContent = `SALA ${safeCode}`;
@@ -271,9 +391,9 @@ async function refreshPrivateRoom() {
     matchState.textContent = room.status === "WAITING" ? "Aguardando rival" : "Sua vez";
 
     const safeCode = room.code || roomCode;
-    const formattedTime = `${String(room.timeControlMinutes).padStart(2, "0")}:00`;
-    playerClock.textContent = formattedTime;
-    opponentClock.textContent = formattedTime;
+    if (whiteRemainingSeconds === matchDurationSeconds && blackRemainingSeconds === matchDurationSeconds) {
+      setClockDuration(room.timeControlMinutes);
+    }
     roomCodeHeader.hidden = false;
     roomCodeHeader.textContent = `SALA ${safeCode}`;
     roomInviteCode.textContent = safeCode;
@@ -290,7 +410,7 @@ function connectRoomRealtime() {
   stompClient = new window.StompJs.Client({
     brokerURL: WS_BASE_URL,
     reconnectDelay: 3000,
-    debug: () => {},
+    debug: () => { },
     onConnect: () => {
       stompClient.subscribe(`/topic/rooms/${roomCode}`, () => {
         window.setTimeout(refreshPrivateRoom, 80);
@@ -349,12 +469,16 @@ function removeDragState() {
 }
 
 function startPieceDrag(event, row, column, piece) {
+  if (gameFinished || roomStatus === "FINISHED") {
+    updateTurnLabel();
+    return;
+  }
   if (roomStatus !== "IN_PROGRESS") {
     updateTurnLabel("Aguardando rival");
     return;
   }
 
-  if (!isOwnPiece(board[row][column])) return;
+  if (!canSelectPiece(row, column)) return;
 
   event.preventDefault();
   selectedCell = { row, column };
@@ -403,40 +527,15 @@ function showMoves(row, column) {
   clearHighlights();
   const selected = boardElement.querySelector(`[data-row="${row}"][data-column="${column}"]`);
   selected?.classList.add("selected");
-
-  const playerPiece = board[row][column];
-  const direction = board[row][column]?.startsWith("white") ? -1 : 1;
-
-  [[direction, -1], [direction, 1]].forEach(([rowStep, columnStep]) => {
-    const targetRow = row + rowStep;
-    const targetColumn = column + columnStep;
-
-    if (targetRow < 0 || targetRow > 7 || targetColumn < 0 || targetColumn > 7) return;
-    if (board[targetRow][targetColumn]) return;
-
-    boardElement.querySelector(`[data-row="${targetRow}"][data-column="${targetColumn}"]`)?.classList.add("valid-move");
-  });
-
-  [[direction * 2, -2], [direction * 2, 2]].forEach(([rowStep, columnStep]) => {
-    const targetRow = row + rowStep;
-    const targetColumn = column + columnStep;
-    const capturedRow = row + rowStep / 2;
-    const capturedColumn = column + columnStep / 2;
-
-    if (targetRow < 0 || targetRow > 7 || targetColumn < 0 || targetColumn > 7) return;
-    if (board[targetRow][targetColumn]) return;
-
-    const capturedPiece = board[capturedRow][capturedColumn];
-    const isOpponentPiece = capturedPiece && !capturedPiece.startsWith(playerPiece.split(" ")[0]);
-
-    if (!isOpponentPiece) return;
-
-    boardElement.querySelector(`[data-row="${targetRow}"][data-column="${targetColumn}"]`)?.classList.add("valid-move");
-  });
 }
 
 async function submitMove(from, to) {
   if (isSubmittingMove) return;
+
+  if (gameFinished || roomStatus === "FINISHED") {
+    updateTurnLabel();
+    return;
+  }
 
   if (roomStatus !== "IN_PROGRESS") {
     updateTurnLabel("Aguardando rival");
@@ -476,6 +575,16 @@ function isOwnPiece(piece) {
   return piece.startsWith("black");
 }
 
+function canSelectPiece(row, column) {
+  if (!isOwnPiece(board[row][column])) return false;
+
+  if (forcedCaptureRow == null || forcedCaptureColumn == null) {
+    return true;
+  }
+
+  return row === forcedCaptureRow && column === forcedCaptureColumn;
+}
+
 function movePiece(targetRow, targetColumn) {
   if (!selectedCell) return;
 
@@ -485,14 +594,23 @@ function movePiece(targetRow, targetColumn) {
 }
 
 function handleCellClick(row, column) {
+  if (gameFinished || roomStatus === "FINISHED") {
+    updateTurnLabel();
+    return;
+  }
   if (roomStatus !== "IN_PROGRESS") {
     updateTurnLabel("Aguardando rival");
     return;
   }
 
-  if (isOwnPiece(board[row][column])) {
+  if (canSelectPiece(row, column)) {
     selectedCell = { row, column };
     showMoves(row, column);
+    return;
+  }
+
+  if (isOwnPiece(board[row][column])) {
+    updateTurnLabel("Continue a captura com a peça marcada");
     return;
   }
 
@@ -502,8 +620,10 @@ function handleCellClick(row, column) {
 function renderBoard() {
   boardElement.innerHTML = "";
 
-  for (let row = 0; row < 8; row += 1) {
-    for (let column = 0; column < 8; column += 1) {
+  for (let displayRow = 0; displayRow < 8; displayRow += 1) {
+    for (let displayColumn = 0; displayColumn < 8; displayColumn += 1) {
+      const row = playerColor === "BLACK" ? 7 - displayRow : displayRow;
+      const column = playerColor === "BLACK" ? 7 - displayColumn : displayColumn;
       const cell = document.createElement("button");
       const isDark = (row + column) % 2 === 1;
       cell.type = "button";
@@ -527,6 +647,16 @@ function renderBoard() {
       boardElement.appendChild(cell);
     }
   }
+}
+
+function renderBoardCoordinates() {
+  const labels = playerColor === "BLACK"
+    ? ["H", "G", "F", "E", "D", "C", "B", "A"]
+    : ["A", "B", "C", "D", "E", "F", "G", "H"];
+
+  document.querySelectorAll(".board-files span").forEach((element, index) => {
+    element.textContent = labels[index];
+  });
 }
 
 copyInviteButton?.addEventListener("click", async () => {
@@ -556,4 +686,10 @@ if (requireAuthentication()) {
   loadPrivateRoom();
   connectRoomRealtime();
   window.lucide?.createIcons();
+}
+function updateInvitationPanel(room) {
+  if (!invitationPanel) return;
+  const hasGuest = Boolean(room.guest);
+  const matchStarted = room.status === "IN_PROGRESS";
+  invitationPanel.hidden = hasGuest || matchStarted;
 }
