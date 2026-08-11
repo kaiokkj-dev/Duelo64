@@ -77,6 +77,8 @@ let drawOfferedByColor = null;
 let isSubmittingMatchAction = false;
 let legalMovesRequestId = 0;
 let latestAppliedMoveCount = -1;
+let latestStateSignature = "";
+let stateRecoveryInterval = null;
 let suppressBoardClickUntil = 0;
 let rematchPending = false;
 let rematchRequestedByUserId = null;
@@ -255,6 +257,18 @@ function normalizePiece(piece) {
   return color && type ? `${color} ${type}` : null;
 }
 
+function stateSignature(state) {
+  return [
+    state.moveCount,
+    state.status,
+    state.currentTurn,
+    state.drawOfferPending,
+    state.drawOfferedByColor,
+    state.winnerColor,
+    state.finishReason,
+  ].join("|");
+}
+
 function syncBoardFromState(state) {
   const incomingMoveCount = Number(state.moveCount);
 
@@ -265,6 +279,8 @@ function syncBoardFromState(state) {
   if (Number.isFinite(incomingMoveCount)) {
     latestAppliedMoveCount = incomingMoveCount;
   }
+
+  latestStateSignature = stateSignature(state);
 
   state.board.forEach((rowCells, row) => {
     rowCells.forEach((piece, column) => {
@@ -648,6 +664,33 @@ function applyRoom(room) {
   roomCodeHeader.hidden = false;
   roomCodeHeader.textContent = `SALA ${safeCode}`;
   roomInviteCode.textContent = safeCode;
+}
+
+async function recoverMissedGameState() {
+  if (
+    !roomCode
+    || document.hidden
+    || roomStatus !== "IN_PROGRESS"
+    || isSubmittingMove
+    || dragState
+  ) {
+    return;
+  }
+
+  try {
+    const state = await apiRequest(`/chess/rooms/${encodeURIComponent(roomCode)}/state`);
+    if (stateSignature(state) !== latestStateSignature) {
+      syncBoardFromState(state);
+    }
+  } catch {
+    // A conexao WebSocket continua responsavel pelo fluxo normal.
+    // Esta consulta serve apenas para recuperar um evento perdido.
+  }
+}
+
+function startStateRecovery() {
+  if (stateRecoveryInterval) return;
+  stateRecoveryInterval = window.setInterval(recoverMissedGameState, 2000);
 }
 
 async function loadRoom() {
@@ -1155,8 +1198,18 @@ async function initializeRoomPage() {
   window.lucide?.createIcons();
 
   const loaded = await loadRoom();
-  if (loaded) connectRoomRealtime();
+  if (loaded) {
+    connectRoomRealtime();
+    startStateRecovery();
+  }
 }
+
+window.addEventListener("pagehide", () => {
+  if (stateRecoveryInterval) {
+    window.clearInterval(stateRecoveryInterval);
+    stateRecoveryInterval = null;
+  }
+});
 
 if (requireAuthentication()) {
   initializeRoomPage();
