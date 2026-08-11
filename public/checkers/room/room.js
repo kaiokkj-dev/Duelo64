@@ -67,6 +67,7 @@ let clockSyncedAtServerMillis = Date.now();
 let serverClockOffsetMillis = 0;
 let timerInterval = null;
 let stateRecoveryInterval = null;
+let stateRecoveryRequestInFlight = false;
 let gameFinished = false;
 let timeoutRefreshRequested = false;
 let forcedCaptureRow = null;
@@ -259,6 +260,7 @@ function normalizePiece(piece) {
 
 function stateSignature(state) {
   return [
+    JSON.stringify(state.board),
     state.moveCount,
     state.status,
     state.currentTurn,
@@ -681,8 +683,15 @@ function applyRoom(room) {
 }
 
 async function recoverMissedGameState() {
-  if (document.hidden || roomStatus !== "IN_PROGRESS" || isSubmittingMove || dragState) return;
+  if (
+    document.hidden
+    || roomStatus !== "IN_PROGRESS"
+    || isSubmittingMove
+    || dragState
+    || stateRecoveryRequestInFlight
+  ) return;
 
+  stateRecoveryRequestInFlight = true;
   try {
     const state = await apiRequest(`/checkers/rooms/${encodeURIComponent(roomCode)}/state`);
     if (stateSignature(state) !== latestStateSignature) {
@@ -690,12 +699,14 @@ async function recoverMissedGameState() {
     }
   } catch {
     // O WebSocket e o fluxo normal de reconexao continuam sendo os mecanismos principais.
+  } finally {
+    stateRecoveryRequestInFlight = false;
   }
 }
 
 function startStateRecovery() {
   if (stateRecoveryInterval) return;
-  stateRecoveryInterval = window.setInterval(recoverMissedGameState, 2000);
+  stateRecoveryInterval = window.setInterval(recoverMissedGameState, 1000);
 }
 
 async function loadRoom() {
@@ -1193,6 +1204,10 @@ async function initializeRoomPage() {
 
 window.addEventListener("pagehide", () => {
   if (stateRecoveryInterval) window.clearInterval(stateRecoveryInterval);
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) recoverMissedGameState();
 });
 
 if (requireAuthentication()) {

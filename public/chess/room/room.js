@@ -79,6 +79,7 @@ let legalMovesRequestId = 0;
 let latestAppliedMoveCount = -1;
 let latestStateSignature = "";
 let stateRecoveryInterval = null;
+let stateRecoveryRequestInFlight = false;
 let suppressBoardClickUntil = 0;
 let rematchPending = false;
 let rematchRequestedByUserId = null;
@@ -259,6 +260,7 @@ function normalizePiece(piece) {
 
 function stateSignature(state) {
   return [
+    JSON.stringify(state.board),
     state.moveCount,
     state.status,
     state.currentTurn,
@@ -673,10 +675,12 @@ async function recoverMissedGameState() {
     || roomStatus !== "IN_PROGRESS"
     || isSubmittingMove
     || dragState
+    || stateRecoveryRequestInFlight
   ) {
     return;
   }
 
+  stateRecoveryRequestInFlight = true;
   try {
     const state = await apiRequest(`/chess/rooms/${encodeURIComponent(roomCode)}/state`);
     if (stateSignature(state) !== latestStateSignature) {
@@ -685,12 +689,14 @@ async function recoverMissedGameState() {
   } catch {
     // A conexao WebSocket continua responsavel pelo fluxo normal.
     // Esta consulta serve apenas para recuperar um evento perdido.
+  } finally {
+    stateRecoveryRequestInFlight = false;
   }
 }
 
 function startStateRecovery() {
   if (stateRecoveryInterval) return;
-  stateRecoveryInterval = window.setInterval(recoverMissedGameState, 2000);
+  stateRecoveryInterval = window.setInterval(recoverMissedGameState, 1000);
 }
 
 async function loadRoom() {
@@ -1209,6 +1215,10 @@ window.addEventListener("pagehide", () => {
     window.clearInterval(stateRecoveryInterval);
     stateRecoveryInterval = null;
   }
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) recoverMissedGameState();
 });
 
 if (requireAuthentication()) {
