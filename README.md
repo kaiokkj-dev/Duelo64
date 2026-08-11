@@ -2,12 +2,14 @@
 
 Plataforma web multiplayer de jogos de estratégia em tempo real.
 
-O Duelo64 foi criado para oferecer partidas competitivas e salas privadas em jogos clássicos de tabuleiro, com backend autoritativo, matchmaking, ranking, histórico e comunicação em tempo real.
+O **Duelo64** foi criado para oferecer partidas competitivas e salas privadas em jogos clássicos de tabuleiro, com backend autoritativo, matchmaking ranqueado, Elo, ranking, histórico e comunicação em tempo real.
 
 Atualmente, a plataforma possui:
 
 - Damas Brasileiras
 - Xadrez
+
+---
 
 ## Funcionalidades
 
@@ -15,13 +17,14 @@ Atualmente, a plataforma possui:
 
 - Salas privadas por código
 - Matchmaking público ranqueado
-- WebSocket/STOMP em tempo real
+- Atualização em tempo real com WebSocket/STOMP
 - Reconexão automática
 - Presença online durante partidas
 - Chat em tempo real
 - Revanche
 - Oferta e aceitação de empate
 - Abandono de partida
+- Cronômetros sincronizados pelo servidor
 
 ### Competitivo
 
@@ -31,37 +34,64 @@ Atualmente, a plataforma possui:
 - Histórico de partidas
 - Variação de Elo por partida ranqueada
 - Perfis públicos
+- Partidas `FRIENDLY` e `RANKED`
 
-### Damas Brasileiras
+---
 
-Motor de regras executado no backend com:
+## Damas Brasileiras
 
-- captura obrigatória
+O motor de regras das Damas é executado no backend.
+
+Principais regras implementadas:
+
+- Movimento de pedras
+- Captura obrigatória
+- Captura para frente e para trás
 - Lei da Maioria
-- captura múltipla
-- promoção para dama
-- movimento e captura de dama
-- vitória por falta de peças
-- vitória por falta de movimentos
-- empate por repetição
-- empate por limite de movimentos
-- cronômetro e derrota por tempo
+- Captura múltipla
+- Continuação obrigatória da captura
+- Promoção para dama
+- Movimento de dama
+- Captura de dama
+- Vitória quando o adversário fica sem peças
+- Vitória quando o adversário fica sem movimentos legais
+- Empate por acordo
+- Empate por repetição
+- Empate por limite de movimentos
+- Abandono
+- Derrota por tempo
 
-### Xadrez
+---
 
-Motor completo no backend com:
+## Xadrez
 
-- movimentos legais de todas as peças
-- xeque
-- xeque-mate
-- roque
-- en passant
-- promoção
-- afogamento
-- repetição de posição
-- regra dos 50 lances
-- material insuficiente
-- cronômetro e derrota por tempo
+O Xadrez também possui um motor de regras independente no backend.
+
+Principais regras implementadas:
+
+- Movimento legal de peões
+- Cavalos
+- Bispos
+- Torres
+- Rainha
+- Rei
+- Capturas
+- Xeque
+- Xeque-mate
+- Roque pequeno e grande
+- En passant
+- Promoção de peão
+- Afogamento
+- Repetição de posição
+- Regra dos 50 lances
+- Material insuficiente
+- Empate por acordo
+- Abandono
+- Derrota por tempo
+
+O servidor impede jogadas que deixariam o próprio rei em xeque.
+
+---
 
 ## Stack
 
@@ -70,7 +100,8 @@ Motor completo no backend com:
 - HTML5
 - CSS3
 - JavaScript
-- WebSocket / STOMP
+- WebSocket
+- STOMP
 
 ### Backend
 
@@ -88,30 +119,25 @@ Motor completo no backend com:
 - Neon
 - Cloudinary
 
+---
+
 ## Arquitetura
 
 O backend é a autoridade das partidas.
 
-O frontend não decide se uma jogada é válida. Ele envia a ação para o servidor, que valida as regras, persiste o novo estado e publica a atualização para os jogadores via WebSocket.
+O frontend não decide se uma jogada é válida.
 
-A infraestrutura multiplayer é compartilhada entre as modalidades:
-
-- salas
-- matchmaking
-- ranking
-- Elo
-- histórico
-- presença
-- chat
-- reconexão
-- revanche
-
-Cada jogo possui seu próprio domínio de regras:
+O fluxo geral é:
 
 ```text
-game/
-├── checkers/
-├── chess/
-├── matchmaking/
-├── match/
-└── room/
+Jogador realiza uma ação
+        ↓
+Frontend envia para o backend
+        ↓
+Servidor valida regras e permissões
+        ↓
+Estado é persistido
+        ↓
+Evento WebSocket é publicado
+        ↓
+Os jogadores recebem o novo estado
