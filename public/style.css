@@ -69,7 +69,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid rgb(249 115 22 / 38%)
   text-decoration: none; 
   transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;}
 .header-login:hover { transform: translateY(-3px); }
-.header-signup { min-height: 40px; padding: 0 17px; font-size: 12px; }
+.header-signup { min-width: 118px; min-height: 44px; padding: 0 18px; font-size: 11px; }
 .mobile-account-link { display: none; }
 .menu-button { width: 40px; height: 40px; padding: 0; display: grid; place-items: center; color: var(--texto); border: 1px solid var(--borda); border-radius: var(--raio); background: var(--superficie-clara); }
 .menu-button svg { width: 19px; height: 19px; }
@@ -270,7 +270,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid rgb(249 115 22 / 38%)
 .game-card-featured { min-height: 220px; display: grid; grid-template-columns: 76px minmax(0, 1fr); grid-template-rows: 1fr auto; align-items: center; gap: 18px; border-color: rgb(249 115 22 / 30%); background: linear-gradient(135deg, rgb(249 115 22 / 9%), transparent 52%), var(--superficie); }
 .game-card-icon { width: 64px; height: 64px; display: grid; place-items: center; color: #6f665f; border: 1px solid var(--borda); border-radius: var(--raio); background: #211e1b; font-size: 29px; line-height: .65; text-align: center; }
 .checker-disc { width: 38px; aspect-ratio: 1; display: block; border: 4px solid #c84f08; border-radius: 50%; background: var(--laranja); box-shadow: inset 0 0 0 4px rgb(255 255 255 / 16%), 0 5px 8px rgb(0 0 0 / 28%); }
-.chess-card-icon { color: #817871; font-family: Georgia, "Times New Roman", serif; font-size: 42px; text-shadow: 0 4px 7px rgb(0 0 0 / 32%); }
+.chess-card-icon { color: var(--laranja); font-family: Georgia, "Times New Roman", serif; font-size: 42px; text-shadow: 0 4px 9px rgb(249 115 22 / 24%); }
 .connect-four-icon { padding: 13px; grid-template-columns: repeat(4, 7px); grid-template-rows: repeat(3, 7px); align-content: center; justify-content: center; gap: 3px; }
 .connect-four-icon span { width: 7px; height: 7px; border-radius: 50%; background: #625b55; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 6%); }
 .connect-four-icon .connected { background: var(--laranja); }
@@ -443,10 +443,12 @@ a:focus-visible, button:focus-visible { outline: 3px solid rgb(249 115 22 / 38%)
 }
 
 .shared-account-login {
+  min-width: 118px;
   min-height: 44px;
-  padding: 0 15px;
+  padding: 0 18px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   color: #fff;
   border: 1px solid var(--laranja);
   border-radius: 7px;

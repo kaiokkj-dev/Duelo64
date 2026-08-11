@@ -68,7 +68,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid rgb(249 115 22 / 38%)
   font-weight: 900; 
   text-decoration: none;}
 .button-primary:hover { background: var(--laranja-hover); }
-.header-signup { min-height: 40px; padding-inline: 17px; font-size: 12px; }
+  .header-signup { min-width: 118px; min-height: 44px; padding-inline: 18px; font-size: 11px; }
 .mobile-account-link { display: none; }
 .menu-button { width: 40px; height: 40px; padding: 0; display: grid; place-items: center; color: var(--texto); border: 1px solid var(--borda); border-radius: var(--raio); background: var(--superficie-clara); }
 .menu-button svg { width: 19px; height: 19px; }
@@ -165,4 +165,3 @@ a:focus-visible, button:focus-visible { outline: 3px solid rgb(249 115 22 / 38%)
   html { scroll-behavior: auto; }
   *, *::before, *::after { transition-duration: .01ms !important; }
 }
-
