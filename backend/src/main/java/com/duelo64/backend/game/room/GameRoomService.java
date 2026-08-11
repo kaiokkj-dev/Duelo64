@@ -109,6 +109,16 @@ public class GameRoomService {
     }
 
     @Transactional
+    public List<GameRoom> resolveTimedOutRooms(UUID userId) {
+        List<GameRoom> activeRooms = gameRoomRepository
+                .findActiveRoomsForUser(userId, RoomStatus.IN_PROGRESS);
+
+        activeRooms.forEach(room -> lifecycleFor(room.getGameType()).resolveTimeout(room, userId));
+
+        return gameRoomRepository.findActiveRoomsForUser(userId, RoomStatus.IN_PROGRESS);
+    }
+
+    @Transactional
     public GameRoom requestRematch(UUID userId, String code) {
         GameRoom room = findByCodeForUpdate(code);
         requireFinishedParticipant(room, userId);

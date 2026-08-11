@@ -1,5 +1,7 @@
 package com.duelo64.backend.game.chess.application;
 
+import java.util.UUID;
+
 import org.springframework.stereotype.Component;
 
 import com.duelo64.backend.game.room.*;
@@ -29,5 +31,10 @@ public class ChessGameStateLifecycle implements GameStateLifecycle {
     public void start(GameRoom room) {
         stateRepository.findByRoomId(room.getId())
                 .ifPresent(state -> state.startClock(room.getStartedAt()));
+    }
+
+    @Override
+    public void resolveTimeout(GameRoom room, UUID userId) {
+        gameService.confirmTimeout(userId, room.getCode());
     }
 }

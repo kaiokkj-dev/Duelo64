@@ -27,7 +27,6 @@ public class MatchmakingService {
     private final Map<UUID, MatchmakingQueueEntry> queue = new LinkedHashMap<>();
     private final Map<UUID, MatchFoundResponse> foundMatches = new LinkedHashMap<>();
     private final GameRoomService roomService;
-    private final GameRoomRepository roomRepository;
     private final UserRepository userRepository;
     private final PlayerGameRatingRepository ratingRepository;
     private final MatchmakingRealtimePublisher realtimePublisher;
@@ -37,24 +36,21 @@ public class MatchmakingService {
     @Autowired
     public MatchmakingService(
             GameRoomService roomService,
-            GameRoomRepository roomRepository,
             UserRepository userRepository,
             PlayerGameRatingRepository ratingRepository,
             MatchmakingRealtimePublisher realtimePublisher) {
-        this(roomService, roomRepository, userRepository, ratingRepository, realtimePublisher,
+        this(roomService, userRepository, ratingRepository, realtimePublisher,
                 new SecureRandom(), Clock.systemUTC());
     }
 
     MatchmakingService(
             GameRoomService roomService,
-            GameRoomRepository roomRepository,
             UserRepository userRepository,
             PlayerGameRatingRepository ratingRepository,
             MatchmakingRealtimePublisher realtimePublisher,
             SecureRandom random,
             Clock clock) {
         this.roomService = roomService;
-        this.roomRepository = roomRepository;
         this.userRepository = userRepository;
         this.ratingRepository = ratingRepository;
         this.realtimePublisher = realtimePublisher;
@@ -187,13 +183,13 @@ public class MatchmakingService {
     }
 
     private void ensureNotPlaying(UUID userId) {
-        if (!roomRepository.findActiveRoomsForUser(userId, RoomStatus.IN_PROGRESS).isEmpty()) {
+        if (!roomService.resolveTimedOutRooms(userId).isEmpty()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Voce ja esta em uma partida em andamento.");
         }
     }
 
     private Optional<MatchFoundResponse> activeRankedMatch(UUID userId, GameType gameType) {
-        return roomRepository.findActiveRoomsForUser(userId, RoomStatus.IN_PROGRESS).stream()
+        return roomService.resolveTimedOutRooms(userId).stream()
                 .filter(room -> room.getMatchType() == MatchType.RANKED)
                 .filter(room -> gameType == null || room.getGameType() == gameType)
                 .findFirst()

@@ -26,7 +26,6 @@ import com.duelo64.backend.user.UserRepository;
 
 class MatchmakingServiceTest {
     private GameRoomService roomService;
-    private GameRoomRepository roomRepository;
     private UserRepository userRepository;
     private PlayerGameRatingRepository ratingRepository;
     private MatchmakingRealtimePublisher publisher;
@@ -38,7 +37,6 @@ class MatchmakingServiceTest {
     @BeforeEach
     void setUp() {
         roomService = mock(GameRoomService.class);
-        roomRepository = mock(GameRoomRepository.class);
         userRepository = mock(UserRepository.class);
         ratingRepository = mock(PlayerGameRatingRepository.class);
         publisher = mock(MatchmakingRealtimePublisher.class);
@@ -46,13 +44,12 @@ class MatchmakingServiceTest {
         when(random.nextBoolean()).thenReturn(true);
         clock = new MutableClock(Instant.parse("2026-08-10T18:00:00Z"));
         service = new MatchmakingService(
-                roomService, roomRepository, userRepository, ratingRepository, publisher, random, clock);
+                roomService, userRepository, ratingRepository, publisher, random, clock);
         first = user("first");
         second = user("second");
         when(userRepository.findById(first.getId())).thenReturn(Optional.of(first));
         when(userRepository.findById(second.getId())).thenReturn(Optional.of(second));
-        when(roomRepository.findActiveRoomsForUser(any(UUID.class), eq(RoomStatus.IN_PROGRESS)))
-                .thenReturn(List.of());
+        when(roomService.resolveTimedOutRooms(any(UUID.class))).thenReturn(List.of());
         when(ratingRepository.findByUserIdAndGameType(any(UUID.class), eq(GameType.CHECKERS)))
                 .thenReturn(Optional.empty());
         when(roomService.createRankedRoom(any(UUID.class), any(UUID.class), any(GameType.class), anyInt()))
@@ -116,7 +113,7 @@ class MatchmakingServiceTest {
         MatchmakingStatusResponse secondStatus = service.enqueue(second.getId(), 10);
 
         assertThat(secondStatus.status()).isEqualTo("QUEUED");
-        verifyNoInteractions(roomService);
+        verify(roomService, never()).createRankedRoom(any(), any(), any(), anyInt());
     }
 
     @Test
@@ -125,7 +122,7 @@ class MatchmakingServiceTest {
         MatchmakingStatusResponse secondStatus = service.enqueue(second.getId(), GameType.CHESS, 10);
 
         assertThat(secondStatus.status()).isEqualTo("QUEUED");
-        verifyNoInteractions(roomService);
+        verify(roomService, never()).createRankedRoom(any(), any(), any(), anyInt());
     }
 
     @Test
@@ -147,7 +144,7 @@ class MatchmakingServiceTest {
         assertThatThrownBy(() -> service.enqueue(first.getId(), GameType.CHESS, 10))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("outra modalidade");
-        verifyNoInteractions(roomService);
+        verify(roomService, never()).createRankedRoom(any(), any(), any(), anyInt());
     }
 
     @Test
@@ -175,7 +172,7 @@ class MatchmakingServiceTest {
     void activePlayerCannotEnterQueue() {
         GameRoom active = GameRoom.privateCheckers("ACTIVE", 10, first);
         active.join(second);
-        when(roomRepository.findActiveRoomsForUser(first.getId(), RoomStatus.IN_PROGRESS))
+        when(roomService.resolveTimedOutRooms(first.getId()))
                 .thenReturn(List.of(active));
 
         assertThatThrownBy(() -> service.enqueue(first.getId(), 10))
