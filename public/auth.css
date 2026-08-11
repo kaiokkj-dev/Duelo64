@@ -511,6 +511,13 @@ input:-webkit-autofill:focus {
     transition: background-color 5000s ease-in-out 0s;
 }
 
+.nickname-control input:-webkit-autofill,
+.nickname-control input:-webkit-autofill:hover,
+.nickname-control input:-webkit-autofill:focus {
+    border: 0;
+    border-radius: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .auth-back-link,
   .auth-field input,
