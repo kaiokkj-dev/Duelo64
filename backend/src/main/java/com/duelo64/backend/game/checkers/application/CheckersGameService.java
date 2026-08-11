@@ -231,11 +231,15 @@ public class CheckersGameService {
             return;
         }
 
-        state.consumeCurrentTurnTime(now);
+        long remainingMillis = state.getCurrentTurn() == PieceColor.WHITE
+                ? state.calculateWhiteRemainingMillis(now)
+                : state.calculateBlackRemainingMillis(now);
 
-        if (!state.hasCurrentPlayerRunOutOfTime()) {
+        if (remainingMillis > 0) {
             return;
         }
+
+        state.consumeCurrentTurnTime(now);
 
         completeMatch(state, state.getCurrentTurn().opponent(), CheckersFinishReason.TIMEOUT);
         roomRealtimePublisher.publish(RoomRealtimeEvent.gameStateUpdated(room));

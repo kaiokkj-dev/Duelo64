@@ -179,8 +179,14 @@ public class ChessGameService {
 
     private void finishOnTimeout(ChessGameState state, Instant now) {
         if (state.getRoom().getStatus() != RoomStatus.IN_PROGRESS) return;
+
+        long remainingMillis = state.getCurrentTurn() == ChessColor.WHITE
+                ? state.calculateWhiteRemainingMillis(now)
+                : state.calculateBlackRemainingMillis(now);
+
+        if (remainingMillis > 0) return;
+
         state.consumeCurrentTurnTime(now);
-        if (!state.hasCurrentPlayerRunOutOfTime()) return;
         complete(state, state.getCurrentTurn().opponent(), ChessFinishReason.TIMEOUT);
         publish(state);
     }
