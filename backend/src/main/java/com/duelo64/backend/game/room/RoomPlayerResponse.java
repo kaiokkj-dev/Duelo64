@@ -6,7 +6,6 @@ import com.duelo64.backend.user.User;
 
 public record RoomPlayerResponse(
         UUID id,
-        String email,
         String nickname,
         String avatarUrl) {
 
@@ -17,7 +16,6 @@ public record RoomPlayerResponse(
 
         return new RoomPlayerResponse(
                 user.getId(),
-                user.getEmail(),
                 user.getNickname(),
                 user.getAvatarUrl());
     }
