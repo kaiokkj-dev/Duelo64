@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.duelo64.backend.game.checkers.application.CheckersGameService;
@@ -28,8 +29,10 @@ public class CheckersGameController {
     }
 
     @GetMapping
-    public ResponseEntity<CheckersGameStateResponse> getState(@PathVariable String code) {
-        CheckersGameState state = checkersGameService.getState(code);
+    public ResponseEntity<CheckersGameStateResponse> getState(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable String code) {
+        CheckersGameState state = checkersGameService.getState(userId(jwt), code);
 
         return ResponseEntity.ok(CheckersGameStateResponse.from(state));
     }
@@ -43,6 +46,65 @@ public class CheckersGameController {
         UUID userId = UUID.fromString(jwt.getSubject());
         CheckersGameState state = checkersGameService.movePiece(userId, code, request);
 
+        return ResponseEntity.ok(CheckersGameStateResponse.from(state));
+    }
+
+    @GetMapping("/legal-moves")
+    public ResponseEntity<LegalMovesResponse> legalMoves(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable String code,
+            @RequestParam int row,
+            @RequestParam int column) {
+
+        UUID userId = UUID.fromString(jwt.getSubject());
+        var moves = checkersGameService.legalMoves(userId, code, row, column)
+                .stream()
+                .map(LegalMoveResponse::from)
+                .toList();
+
+        return ResponseEntity.ok(new LegalMovesResponse(moves));
+    }
+
+    @PostMapping("/resign")
+    public ResponseEntity<CheckersGameStateResponse> resign(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable String code) {
+        return stateResponse(checkersGameService.resign(userId(jwt), code));
+    }
+
+    @PostMapping("/timeout")
+    public ResponseEntity<CheckersGameStateResponse> confirmTimeout(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable String code) {
+        return stateResponse(checkersGameService.confirmTimeout(userId(jwt), code));
+    }
+
+    @PostMapping("/draw-offer")
+    public ResponseEntity<CheckersGameStateResponse> offerDraw(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable String code) {
+        return stateResponse(checkersGameService.offerDraw(userId(jwt), code));
+    }
+
+    @PostMapping("/draw-accept")
+    public ResponseEntity<CheckersGameStateResponse> acceptDraw(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable String code) {
+        return stateResponse(checkersGameService.acceptDraw(userId(jwt), code));
+    }
+
+    @PostMapping("/draw-decline")
+    public ResponseEntity<CheckersGameStateResponse> declineDraw(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable String code) {
+        return stateResponse(checkersGameService.declineDraw(userId(jwt), code));
+    }
+
+    private UUID userId(Jwt jwt) {
+        return UUID.fromString(jwt.getSubject());
+    }
+
+    private ResponseEntity<CheckersGameStateResponse> stateResponse(CheckersGameState state) {
         return ResponseEntity.ok(CheckersGameStateResponse.from(state));
     }
 }

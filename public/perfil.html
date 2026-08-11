@@ -176,11 +176,20 @@
           </form>
         </section>
 
+        <nav class="profile-game-tabs" aria-label="Modalidade das estatísticas">
+          <button class="profile-game-tab active" type="button" data-game-type="CHECKERS" aria-pressed="true">
+            Damas
+          </button>
+          <button class="profile-game-tab" type="button" data-game-type="CHESS" aria-pressed="false">
+            Xadrez
+          </button>
+        </nav>
+
         <section class="profile-stats" aria-label="Estatísticas do jogador">
           <article class="stat-card stat-card-ranking">
-            <span class="stat-label">Ranking atual</span>
-            <strong id="profile-ranking">Não classificado</strong>
-            <small>Jogue partidas ranqueadas para entrar no ranking.</small>
+            <span class="stat-label" id="profile-rating-label">Elo · Damas</span>
+            <strong id="profile-ranking">1000</strong>
+            <small>Partidas privadas são amistosas. O Elo muda apenas em partidas ranqueadas.</small>
           </article>
 
           <article class="stat-card">
@@ -215,10 +224,12 @@
               <span class="profile-eyebrow">Atividade</span>
               <h2 id="history-title">Partidas recentes</h2>
             </div>
-            <span class="history-status">Histórico em breve</span>
+            <span class="history-status">Últimas 20</span>
           </header>
 
-          <div class="history-empty">
+          <div class="history-list" id="history-list" hidden></div>
+
+          <div class="history-empty" id="history-empty">
             <span class="history-empty-icon"
               ><i data-lucide="swords" aria-hidden="true"></i
             ></span>

@@ -2,6 +2,11 @@ package com.duelo64.backend.game.checkers.persistence;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import com.duelo64.backend.game.checkers.domain.CheckersBoard;
@@ -68,6 +73,16 @@ public class CheckersGameState {
     @Column(name = "finish_reason", length = 32)
     private CheckersFinishReason finishReason;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "draw_offered_by_color", length = 16)
+    private PieceColor drawOfferedByColor;
+
+    @Column(name = "position_occurrences", nullable = false, columnDefinition = "TEXT")
+    private String positionOccurrences;
+
+    @Column(name = "king_only_move_count", nullable = false)
+    private int kingOnlyMoveCount;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -89,6 +104,9 @@ public class CheckersGameState {
         this.whiteRemainingMillis = initialTimeMillis;
         this.blackRemainingMillis = initialTimeMillis;
         this.turnStartedAt = null;
+        this.positionOccurrences = "";
+        this.kingOnlyMoveCount = 0;
+        recordCurrentPosition();
     }
 
     public static CheckersGameState start(GameRoom room) {
@@ -145,6 +163,7 @@ public class CheckersGameState {
         this.boardNotation = result.board().toNotation();
         this.moveCount++;
         this.turnStartedAt = now;
+        this.drawOfferedByColor = null;
 
         if (result.mustContinueCapture()) {
             this.forcedCaptureRow = result.landingPosition().row();
@@ -157,12 +176,80 @@ public class CheckersGameState {
         this.currentTurn = currentTurn.opponent();
     }
 
+    public void updateAutomaticDrawCounters(CheckersMoveResult result, boolean movedPieceWasKing) {
+        if (result.capture() || !movedPieceWasKing) {
+            kingOnlyMoveCount = 0;
+            return;
+        }
+
+        if (!result.mustContinueCapture()) {
+            kingOnlyMoveCount++;
+        }
+    }
+
+    public int recordCurrentPosition() {
+        Map<String, Integer> occurrences = parsePositionOccurrences();
+        String key = currentPositionHash();
+        int count = occurrences.getOrDefault(key, 0) + 1;
+        occurrences.put(key, count);
+        positionOccurrences = serializePositionOccurrences(occurrences);
+        return count;
+    }
+
+    private String currentPositionHash() {
+        String identity = boardNotation
+                + '|' + currentTurn.name()
+                + '|' + (forcedCaptureRow == null ? "-" : forcedCaptureRow)
+                + '|' + (forcedCaptureColumn == null ? "-" : forcedCaptureColumn);
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(identity.getBytes(StandardCharsets.UTF_8));
+            return java.util.HexFormat.of().formatHex(digest);
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 indisponivel.", exception);
+        }
+    }
+
+    private Map<String, Integer> parsePositionOccurrences() {
+        Map<String, Integer> occurrences = new LinkedHashMap<>();
+        if (positionOccurrences == null || positionOccurrences.isBlank()) return occurrences;
+
+        for (String entry : positionOccurrences.split(",")) {
+            String[] parts = entry.split(":", 2);
+            if (parts.length == 2) occurrences.put(parts[0], Integer.parseInt(parts[1]));
+        }
+        return occurrences;
+    }
+
+    private String serializePositionOccurrences(Map<String, Integer> occurrences) {
+        return occurrences.entrySet().stream()
+                .map(entry -> entry.getKey() + ":" + entry.getValue())
+                .collect(java.util.stream.Collectors.joining(","));
+    }
+
     public void finish(PieceColor winnerColor, CheckersFinishReason finishReason) {
+        if (this.winnerColor != null || this.finishReason != null) {
+            return;
+        }
+
         this.winnerColor = winnerColor;
         this.finishReason = finishReason;
         this.forcedCaptureRow = null;
         this.forcedCaptureColumn = null;
         this.turnStartedAt = null;
+        this.drawOfferedByColor = null;
+    }
+
+    public void offerDraw(PieceColor offeredByColor) {
+        this.drawOfferedByColor = offeredByColor;
+    }
+
+    public void declineDraw() {
+        this.drawOfferedByColor = null;
+    }
+
+    public boolean hasPendingDrawOffer() {
+        return drawOfferedByColor != null;
     }
 
     public boolean hasCurrentPlayerRunOutOfTime() {
@@ -251,6 +338,14 @@ public class CheckersGameState {
 
     public CheckersFinishReason getFinishReason() {
         return finishReason;
+    }
+
+    public PieceColor getDrawOfferedByColor() {
+        return drawOfferedByColor;
+    }
+
+    public int getKingOnlyMoveCount() {
+        return kingOnlyMoveCount;
     }
 
 }

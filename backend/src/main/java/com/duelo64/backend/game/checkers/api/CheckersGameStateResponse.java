@@ -16,9 +16,15 @@ public record CheckersGameStateResponse(
         Integer forcedCaptureColumn,
         long whiteRemainingMillis,
         long blackRemainingMillis,
+        Instant turnStartedAt,
+        Instant serverTime,
         String status,
         String winnerColor,
-        String finishReason) {
+        String loserColor,
+        String finishReason,
+        Instant finishedAt,
+        boolean drawOfferPending,
+        String drawOfferedByColor) {
 
     public static CheckersGameStateResponse from(CheckersGameState state) {
         CheckersBoard board = CheckersBoard.fromNotation(state.getBoardNotation());
@@ -37,8 +43,14 @@ public record CheckersGameStateResponse(
                 state.getForcedCaptureColumn(),
                 whiteRemainingMillis,
                 blackRemainingMillis,
+                state.getTurnStartedAt(),
+                now,
                 state.getRoom().getStatus().name(),
                 state.getWinnerColor() == null ? null : state.getWinnerColor().name(),
-                state.getFinishReason() == null ? null : state.getFinishReason().name());
+                state.getWinnerColor() == null ? null : state.getWinnerColor().opponent().name(),
+                state.getFinishReason() == null ? null : state.getFinishReason().name(),
+                state.getRoom().getFinishedAt(),
+                state.hasPendingDrawOffer(),
+                state.getDrawOfferedByColor() == null ? null : state.getDrawOfferedByColor().name());
     }
 }

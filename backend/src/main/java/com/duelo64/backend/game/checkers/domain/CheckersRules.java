@@ -87,6 +87,35 @@ public class CheckersRules {
         return new CheckersMoveResult(board.move(from, to, null, true), false, false, to);
     }
 
+    public List<CheckersLegalMove> legalMoves(
+            CheckersBoard board,
+            PieceColor currentTurn,
+            BoardPosition from,
+            BoardPosition forcedPiece) {
+
+        List<CheckersLegalMove> moves = new ArrayList<>();
+
+        for (int row = 0; row < CheckersBoard.SIZE; row++) {
+            for (int column = 0; column < CheckersBoard.SIZE; column++) {
+                BoardPosition to = new BoardPosition(row, column);
+
+                try {
+                    CheckersMoveResult result = applyMoveDetailed(
+                            board,
+                            currentTurn,
+                            from,
+                            to,
+                            forcedPiece);
+                    moves.add(new CheckersLegalMove(to, result.capture()));
+                } catch (InvalidCheckersMoveException ignored) {
+                    // A mesma autoridade usada no POST elimina destinos invalidos.
+                }
+            }
+        }
+
+        return List.copyOf(moves);
+    }
+
     public boolean hasAnyLegalMove(CheckersBoard board, PieceColor color) {
         if (maximumCaptureCount(board, color) > 0) {
             return true;

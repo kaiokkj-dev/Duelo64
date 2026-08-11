@@ -19,12 +19,31 @@ const playerName = document.querySelector("#player-name");
 const playerPhoto = document.querySelector("#player-photo");
 const opponentName = document.querySelector("#opponent-name");
 const opponentMeta = document.querySelector("#opponent-meta");
+const opponentPresence = document.querySelector("#opponent-presence");
 const opponentPhoto = document.querySelector("#opponent-photo");
 const playerMeta = document.querySelector("#player-meta");
 const chatForm = document.querySelector("#chat-form");
 const chatInput = document.querySelector("#chat-input");
 const chatMessages = document.querySelector("#chat-messages");
 const matchState = document.querySelector("#match-state");
+const resultOverlay = document.querySelector("#result-overlay");
+const resultTitle = document.querySelector("#result-title");
+const resultReason = document.querySelector("#result-reason");
+const rematchRequestButton = document.querySelector("#rematch-request-button");
+const rematchResponse = document.querySelector("#rematch-response");
+const rematchAcceptButton = document.querySelector("#rematch-accept-button");
+const rematchDeclineButton = document.querySelector("#rematch-decline-button");
+const rematchFeedbackElement = document.querySelector("#rematch-feedback");
+const drawOfferButton = document.querySelector("#draw-offer-button");
+const drawOfferStatus = document.querySelector("#draw-offer-status");
+const resignButton = document.querySelector("#resign-button");
+const drawOfferPanel = document.querySelector("#draw-offer-panel");
+const drawAcceptButton = document.querySelector("#draw-accept-button");
+const drawDeclineButton = document.querySelector("#draw-decline-button");
+const resignConfirmationOverlay = document.querySelector("#resign-confirmation-overlay");
+const resignCancelButton = document.querySelector("#resign-cancel-button");
+const resignConfirmButton = document.querySelector("#resign-confirm-button");
+const resignConfirmationFeedback = document.querySelector("#resign-confirmation-feedback");
 
 const board = Array.from({ length: 8 }, () => Array(8).fill(null));
 let selectedCell = null;
@@ -34,17 +53,46 @@ let roomStatus = "WAITING";
 let playerColor = "WHITE";
 let isSubmittingMove = false;
 let stompClient = null;
+let roomSubscription = null;
+let chatSubscription = null;
+let chatErrorSubscription = null;
+let opponentUserId = null;
+let presenceInitialized = false;
+let connectedUserIds = new Set();
 let matchDurationSeconds = matchTime * 60;
 let whiteRemainingSeconds = matchDurationSeconds;
 let blackRemainingSeconds = matchDurationSeconds;
+let whiteRemainingAtSyncSeconds = matchDurationSeconds;
+let blackRemainingAtSyncSeconds = matchDurationSeconds;
+let clockSyncedAtServerMillis = Date.now();
+let serverClockOffsetMillis = 0;
 let timerInterval = null;
-let lastTimerTick = Date.now();
 let gameFinished = false;
 let timeoutRefreshRequested = false;
 let forcedCaptureRow = null;
 let forcedCaptureColumn = null;
 let winnerColor = null;
 let finishReason = null;
+let drawOfferPending = false;
+let drawOfferedByColor = null;
+let isSubmittingMatchAction = false;
+let legalMovesRequestId = 0;
+let latestAppliedMoveCount = -1;
+let suppressBoardClickUntil = 0;
+let rematchPending = false;
+let rematchRequestedByUserId = null;
+let isSubmittingRematch = false;
+let rematchFeedback = "";
+let wasForcedCaptureRequired = false;
+let realtimeDisconnected = false;
+
+const DRAG_THRESHOLD_PX = 6;
+
+function notifyError(error, fallback) {
+  const message = window.DueloToast?.errorMessage(error, fallback) || fallback;
+  window.showToast?.(message, "error");
+  return message;
+}
 
 
 
@@ -144,6 +192,7 @@ function updatePlayersFromRoom(room) {
   const isHost = currentUser?.id && room.host?.id === currentUser.id;
   const you = isHost ? room.host : room.guest;
   const opponent = isHost ? room.guest : room.host;
+  opponentUserId = opponent?.id || null;
 
   playerColor = isHost ? "WHITE" : "BLACK";
   renderBoardCoordinates();
@@ -163,21 +212,39 @@ function updatePlayersFromRoom(room) {
     opponentMeta.textContent = "Convide pelo codigo";
     opponentPhoto.textContent = "R";
   }
+
+  renderOpponentPresence();
+}
+
+function renderOpponentPresence() {
+  if (!opponentPresence) return;
+  const opponentIsDisconnected = presenceInitialized
+    && opponentUserId
+    && !gameFinished
+    && !connectedUserIds.has(opponentUserId);
+  opponentPresence.hidden = !opponentIsDisconnected;
+}
+
+function handlePresenceEvent(event) {
+  if (event.type === "PRESENCE_SNAPSHOT") {
+    connectedUserIds = new Set(event.connectedUserIds || []);
+    presenceInitialized = true;
+  } else if (event.type === "PLAYER_CONNECTED" && event.userId) {
+    connectedUserIds.add(event.userId);
+    presenceInitialized = true;
+  } else if (event.type === "PLAYER_DISCONNECTED" && event.userId) {
+    connectedUserIds.delete(event.userId);
+    presenceInitialized = true;
+  }
+
+  renderOpponentPresence();
 }
 
 function configureRoom() {
   matchModeElement.hidden = true;
 
   setClockDuration(matchTime);
-
-  if (mode !== "private") return;
-
-  const safeCode = roomCode || "AGUARDANDO";
-  matchModeElement.hidden = true;
-  invitationPanel.hidden = false;
-  roomCodeHeader.hidden = false;
-  roomCodeHeader.textContent = `SALA ${safeCode}`;
-  roomInviteCode.textContent = safeCode;
+  invitationPanel.hidden = true;
 }
 
 function normalizePiece(piece) {
@@ -190,6 +257,16 @@ function normalizePiece(piece) {
 }
 
 function syncBoardFromState(state) {
+  const incomingMoveCount = Number(state.moveCount);
+
+  if (Number.isFinite(incomingMoveCount) && incomingMoveCount < latestAppliedMoveCount) {
+    return false;
+  }
+
+  if (Number.isFinite(incomingMoveCount)) {
+    latestAppliedMoveCount = incomingMoveCount;
+  }
+
   state.board.forEach((rowCells, row) => {
     rowCells.forEach((piece, column) => {
       board[row][column] = normalizePiece(piece);
@@ -199,28 +276,239 @@ function syncBoardFromState(state) {
   currentTurn = state.currentTurn;
   whiteRemainingSeconds = Number(state.whiteRemainingMillis) / 1000;
   blackRemainingSeconds = Number(state.blackRemainingMillis) / 1000;
+  whiteRemainingAtSyncSeconds = whiteRemainingSeconds;
+  blackRemainingAtSyncSeconds = blackRemainingSeconds;
+  const receivedServerTime = Date.parse(state.serverTime);
+  clockSyncedAtServerMillis = Number.isFinite(receivedServerTime) ? receivedServerTime : Date.now();
+  serverClockOffsetMillis = clockSyncedAtServerMillis - Date.now();
   forcedCaptureRow = state.forcedCaptureRow;
   forcedCaptureColumn = state.forcedCaptureColumn;
   winnerColor = state.winnerColor;
   finishReason = state.finishReason;
+  drawOfferPending = Boolean(state.drawOfferPending);
+  drawOfferedByColor = state.drawOfferedByColor;
   gameFinished = state.status === "FINISHED";
   timeoutRefreshRequested = false;
+  renderOpponentPresence();
 
   if (gameFinished) {
     roomStatus = "FINISHED";
   }
 
   updateTurnLabel();
-  startClock();
   selectedCell = null;
   clearHighlights();
+  removeDragState();
   renderBoard();
+  renderDrawOffer();
 
-  if (state.mustContinueCapture && forcedCaptureRow != null && forcedCaptureColumn != null) {
+  if (gameFinished) {
+    stopClock();
+    showResultOverlay();
+  } else {
+    startClock();
+  }
+
+  if (!gameFinished && state.mustContinueCapture && forcedCaptureRow != null && forcedCaptureColumn != null) {
     selectedCell = { row: forcedCaptureRow, column: forcedCaptureColumn };
     showMoves(forcedCaptureRow, forcedCaptureColumn);
     matchState.textContent = "Continue capturando";
+    if (!wasForcedCaptureRequired) {
+      window.showToast?.("Você deve continuar a captura com esta peça.", "warning");
+    }
   }
+  wasForcedCaptureRequired = Boolean(state.mustContinueCapture);
+
+  return true;
+}
+
+function updateInvitationPanel(room) {
+  if (!invitationPanel) return;
+
+  const shouldShow = room.roomType === "PRIVATE"
+    && room.status === "WAITING"
+    && !room.guest;
+
+  invitationPanel.hidden = !shouldShow;
+}
+
+function showResultOverlay() {
+  if (!resultOverlay || !resultTitle || !resultReason || !gameFinished) return;
+
+  const isDraw = finishReason?.startsWith("DRAW_");
+  const playerWon = winnerColor === playerColor;
+  const reasonMessages = {
+    NO_PIECES: playerWon
+      ? "O adversário ficou sem peças."
+      : "Você ficou sem peças.",
+    NO_LEGAL_MOVES: playerWon
+      ? "O adversário ficou sem movimentos disponíveis."
+      : "Você ficou sem movimentos disponíveis.",
+    TIMEOUT: playerWon
+      ? "O tempo do adversário acabou."
+      : "Seu tempo acabou.",
+    RESIGNATION: playerWon
+      ? "O adversário abandonou a partida."
+      : "Você abandonou a partida.",
+    DRAW_AGREEMENT: "A partida terminou por acordo.",
+    DRAW_REPETITION: "A posição se repetiu.",
+    DRAW_MOVE_LIMIT: "A partida atingiu o limite de movimentos sem progresso.",
+  };
+
+  resultTitle.textContent = isDraw ? "Empate" : playerWon ? "Você venceu!" : "Você perdeu";
+  resultReason.textContent = reasonMessages[finishReason] || "A partida foi encerrada.";
+  renderRematch();
+  resultOverlay.hidden = false;
+  window.lucide?.createIcons();
+}
+
+function syncRematchFromRoom(room) {
+  rematchPending = Boolean(room.rematchPending);
+  rematchRequestedByUserId = room.rematchRequestedByUserId || null;
+  if (room.rematchRoomCode) {
+    navigateToRematch(room.rematchRoomCode);
+    return;
+  }
+  renderRematch();
+}
+
+function renderRematch() {
+  if (!rematchRequestButton || !rematchResponse) return;
+  const currentUserId = readUser()?.id;
+  const requestIsMine = rematchPending && rematchRequestedByUserId === currentUserId;
+  const requestIsFromOpponent = rematchPending && rematchRequestedByUserId !== currentUserId;
+
+  rematchRequestButton.hidden = requestIsFromOpponent;
+  rematchRequestButton.disabled = isSubmittingRematch || requestIsMine || !gameFinished;
+  rematchRequestButton.textContent = requestIsMine ? "Aguardando adversário..." : "Pedir revanche";
+  rematchResponse.hidden = !requestIsFromOpponent;
+  if (rematchAcceptButton) rematchAcceptButton.disabled = isSubmittingRematch;
+  if (rematchDeclineButton) rematchDeclineButton.disabled = isSubmittingRematch;
+  if (rematchFeedbackElement) rematchFeedbackElement.textContent = rematchFeedback;
+}
+
+async function submitRematchAction(action) {
+  if (isSubmittingRematch || !gameFinished) return;
+  isSubmittingRematch = true;
+  rematchFeedback = "";
+  renderRematch();
+
+  try {
+    const response = await apiRequest(
+      `/checkers/rooms/${encodeURIComponent(roomCode)}/rematch/${action}`,
+      { method: "POST" },
+    );
+    if (action === "accept" && response.roomCode) {
+      navigateToRematch(response.roomCode);
+      return;
+    }
+    syncRematchFromRoom(response);
+  } catch (error) {
+    rematchFeedback = error.message;
+    notifyError(error, "Não foi possível concluir a ação de revanche.");
+  } finally {
+    isSubmittingRematch = false;
+    renderRematch();
+  }
+}
+
+function handleRematchEvent(event) {
+  if (event?.type === "REMATCH_ACCEPTED" && event.newRoomCode) {
+    navigateToRematch(event.newRoomCode);
+    return;
+  }
+  if (event?.type === "REMATCH_DECLINED") {
+    const requestWasMine = rematchRequestedByUserId === readUser()?.id;
+    rematchPending = false;
+    rematchRequestedByUserId = null;
+    if (requestWasMine) {
+      rematchFeedback = "O adversário recusou a revanche.";
+      window.showToast?.("Revanche recusada.", "info");
+    }
+    renderRematch();
+  }
+}
+
+function navigateToRematch(newRoomCode) {
+  const target = new URL(window.location.href);
+  target.searchParams.set("mode", "private");
+  target.searchParams.set("code", newRoomCode);
+  target.searchParams.set("time", String(matchTime));
+  window.location.replace(target.toString());
+}
+
+function renderDrawOffer() {
+  const offerIsMine = drawOfferPending && drawOfferedByColor === playerColor;
+  const offerIsFromOpponent = drawOfferPending && drawOfferedByColor !== playerColor;
+
+  if (drawOfferPanel) drawOfferPanel.hidden = !offerIsFromOpponent || gameFinished;
+  if (drawOfferButton) drawOfferButton.disabled = gameFinished || roomStatus !== "IN_PROGRESS" || drawOfferPending || isSubmittingMatchAction;
+  if (resignButton) resignButton.disabled = gameFinished || roomStatus !== "IN_PROGRESS" || isSubmittingMatchAction;
+  if (drawAcceptButton) drawAcceptButton.disabled = isSubmittingMatchAction;
+  if (drawDeclineButton) drawDeclineButton.disabled = isSubmittingMatchAction;
+  if (drawOfferStatus) {
+    drawOfferStatus.textContent = offerIsMine
+      ? "Aguardando resposta do rival"
+      : drawOfferPending
+        ? "Oferta recebida"
+        : "Enviar proposta ao rival";
+  }
+}
+
+async function submitMatchAction(path) {
+  if (isSubmittingMatchAction || gameFinished || roomStatus !== "IN_PROGRESS") return false;
+
+  isSubmittingMatchAction = true;
+  renderDrawOffer();
+  try {
+    const state = await apiRequest(`/checkers/rooms/${encodeURIComponent(roomCode)}/state/${path}`, {
+      method: "POST",
+    });
+    syncBoardFromState(state);
+    if (path === "draw-offer") window.showToast?.("Oferta de empate enviada.", "info");
+    return true;
+  } catch (error) {
+    notifyError(error, "Não foi possível concluir a ação.");
+    updateTurnLabel();
+    return false;
+  } finally {
+    isSubmittingMatchAction = false;
+    renderDrawOffer();
+  }
+}
+
+function openResignConfirmation() {
+  if (!resignConfirmationOverlay || gameFinished || roomStatus !== "IN_PROGRESS") return;
+  resignConfirmationFeedback.hidden = true;
+  resignConfirmationFeedback.textContent = "";
+  resignConfirmationOverlay.hidden = false;
+  resignCancelButton?.focus();
+}
+
+function closeResignConfirmation() {
+  if (!resignConfirmationOverlay || isSubmittingMatchAction) return;
+  resignConfirmationOverlay.hidden = true;
+  resignButton?.focus();
+}
+
+async function confirmResignation() {
+  if (isSubmittingMatchAction) return;
+
+  resignConfirmButton.disabled = true;
+  resignCancelButton.disabled = true;
+  resignConfirmationFeedback.hidden = true;
+
+  const succeeded = await submitMatchAction("resign");
+
+  resignConfirmButton.disabled = false;
+  resignCancelButton.disabled = false;
+  if (succeeded) {
+    resignConfirmationOverlay.hidden = true;
+    return;
+  }
+
+  resignConfirmationFeedback.textContent = "Não foi possível abandonar a partida. Tente novamente.";
+  resignConfirmationFeedback.hidden = false;
 }
 
 
@@ -228,6 +516,8 @@ function setClockDuration(minutes) {
   matchDurationSeconds = Math.max(1, Number(minutes) || matchTime) * 60;
   whiteRemainingSeconds = matchDurationSeconds;
   blackRemainingSeconds = matchDurationSeconds;
+  whiteRemainingAtSyncSeconds = matchDurationSeconds;
+  blackRemainingAtSyncSeconds = matchDurationSeconds;
   renderClocks();
 }
 
@@ -260,27 +550,39 @@ function tickClock() {
     return;
   }
 
-  const now = Date.now();
-  const elapsedSeconds = (now - lastTimerTick) / 1000;
-  lastTimerTick = now;
+  const estimatedServerNow = Date.now() + serverClockOffsetMillis;
+  const elapsedSeconds = Math.max(0, (estimatedServerNow - clockSyncedAtServerMillis) / 1000);
+
+  whiteRemainingSeconds = whiteRemainingAtSyncSeconds;
+  blackRemainingSeconds = blackRemainingAtSyncSeconds;
 
   if (currentTurn === "WHITE") {
-    whiteRemainingSeconds = Math.max(0, whiteRemainingSeconds - elapsedSeconds);
+    whiteRemainingSeconds = Math.max(0, whiteRemainingAtSyncSeconds - elapsedSeconds);
   } else {
-    blackRemainingSeconds = Math.max(0, blackRemainingSeconds - elapsedSeconds);
+    blackRemainingSeconds = Math.max(0, blackRemainingAtSyncSeconds - elapsedSeconds);
   }
 
   renderClocks();
 
   if (whiteRemainingSeconds <= 0 || blackRemainingSeconds <= 0) {
     stopClock();
-    gameFinished = true;
-    updateTurnLabel(currentTurn === playerColor ? "Tempo esgotado — derrota" : "Tempo esgotado — vitória");
+    requestTimeoutConfirmation();
+  }
+}
 
-    if (!timeoutRefreshRequested) {
-      timeoutRefreshRequested = true;
-      loadGameState();
-    }
+async function requestTimeoutConfirmation() {
+  if (timeoutRefreshRequested || gameFinished || roomStatus !== "IN_PROGRESS") return;
+
+  timeoutRefreshRequested = true;
+  try {
+    const state = await apiRequest(`/checkers/rooms/${encodeURIComponent(roomCode)}/state/timeout`, {
+      method: "POST",
+    });
+    syncBoardFromState(state);
+  } catch (error) {
+    timeoutRefreshRequested = false;
+    updateTurnLabel(error.message);
+    window.setTimeout(loadGameState, 1000);
   }
 }
 
@@ -291,8 +593,6 @@ function startClock() {
     stopClock();
     return;
   }
-
-  lastTimerTick = Date.now();
 
   if (timerInterval) return;
 
@@ -313,6 +613,12 @@ function updateTurnLabel(message) {
   }
 
   if (roomStatus === "FINISHED" || gameFinished) {
+    if (finishReason?.startsWith("DRAW_")) {
+      matchState.textContent = finishReason === "DRAW_AGREEMENT" ? "Empate por acordo" : "Empate";
+      playerClock.classList.remove("active");
+      opponentClock.classList.remove("active");
+      return;
+    }
     const playerWon = winnerColor === playerColor;
     const reasonLabel = finishReason === "TIMEOUT"
       ? "por tempo"
@@ -338,69 +644,66 @@ async function loadGameState() {
     const state = await apiRequest(`/checkers/rooms/${encodeURIComponent(roomCode)}/state`);
     syncBoardFromState(state);
   } catch (error) {
-    updateTurnLabel(error.message);
+    notifyError(error, "Não foi possível carregar o estado da partida.");
+    updateTurnLabel();
   }
 }
 
-async function loadPrivateRoom() {
-  if (mode !== "private") return;
+function applyRoom(room) {
+  const safeCode = room.code || roomCode;
+  roomStatus = room.status;
+  setClockDuration(room.timeControlMinutes);
+  updatePlayersFromRoom(room);
+  syncRematchFromRoom(room);
+  updateInvitationPanel(room);
+  matchModeElement.hidden = true;
+  matchModeElement.textContent = "";
+  roomCodeHeader.hidden = false;
+  roomCodeHeader.textContent = `SALA ${safeCode}`;
+  roomInviteCode.textContent = safeCode;
+}
 
+async function loadRoom() {
   if (!roomCode) {
     matchModeElement.textContent = "Sala nao encontrada";
-    return;
+    return false;
   }
 
   try {
-    const room = await apiRequest(`/checkers/rooms/${encodeURIComponent(roomCode)}/join`, {
-      method: "POST",
-    });
+    const path = mode === "private"
+      ? `/checkers/rooms/${encodeURIComponent(roomCode)}/join`
+      : `/checkers/rooms/${encodeURIComponent(roomCode)}`;
+    const room = await apiRequest(path, mode === "private" ? { method: "POST" } : {});
 
-    const safeCode = room.code || roomCode;
-    roomStatus = room.status;
-    updatePlayersFromRoom(room);
-    updateInvitationPanel(room);
-    setClockDuration(room.timeControlMinutes);
-    matchModeElement.hidden = true;
-    roomCodeHeader.hidden = false;
-    roomCodeHeader.textContent = `SALA ${safeCode}`;
-    roomInviteCode.textContent = safeCode;
+    applyRoom(room);
     await loadGameState();
+    return true;
   } catch (error) {
     if (error.status === 401 || error.status === 403) {
       sessionStorage.removeItem(TOKEN_STORAGE_KEY);
       requireAuthentication();
-      return;
+      return false;
     }
 
     matchModeElement.hidden = false;
     matchModeElement.textContent = error.message;
+    notifyError(error, "Não foi possível carregar a sala.");
     invitationPanel.hidden = true;
     roomCodeHeader.hidden = true;
+    return false;
   }
 }
 
-async function refreshPrivateRoom() {
-  if (mode !== "private" || !roomCode) return;
+async function refreshRoom() {
+  if (!roomCode) return;
 
   try {
     const room = await apiRequest(`/checkers/rooms/${encodeURIComponent(roomCode)}`);
-    roomStatus = room.status;
-    updatePlayersFromRoom(room);
-    matchModeElement.hidden = true;
-    matchModeElement.textContent = "";
-    matchState.textContent = room.status === "WAITING" ? "Aguardando rival" : "Sua vez";
-
-    const safeCode = room.code || roomCode;
-    if (whiteRemainingSeconds === matchDurationSeconds && blackRemainingSeconds === matchDurationSeconds) {
-      setClockDuration(room.timeControlMinutes);
-    }
-    roomCodeHeader.hidden = false;
-    roomCodeHeader.textContent = `SALA ${safeCode}`;
-    roomInviteCode.textContent = safeCode;
-
+    applyRoom(room);
     await loadGameState();
   } catch (error) {
-    updateTurnLabel(error.message);
+    notifyError(error, "Não foi possível atualizar a sala.");
+    updateTurnLabel();
   }
 }
 
@@ -409,18 +712,64 @@ function connectRoomRealtime() {
 
   stompClient = new window.StompJs.Client({
     brokerURL: WS_BASE_URL,
+    connectHeaders: {
+      Authorization: `Bearer ${getToken()}`,
+    },
     reconnectDelay: 3000,
     debug: () => { },
     onConnect: () => {
-      stompClient.subscribe(`/topic/rooms/${roomCode}`, () => {
-        window.setTimeout(refreshPrivateRoom, 80);
+      if (realtimeDisconnected) window.showToast?.("Conexão restabelecida.", "success");
+      realtimeDisconnected = false;
+      try {
+        roomSubscription?.unsubscribe();
+        chatSubscription?.unsubscribe();
+        chatErrorSubscription?.unsubscribe();
+      } catch {
+        // A assinatura da conexão anterior já foi encerrada pelo servidor.
+      }
+
+      roomSubscription = stompClient.subscribe(`/topic/rooms/${roomCode}`, (message) => {
+        try {
+          const event = JSON.parse(message.body);
+          handlePresenceEvent(event);
+          handleRematchEvent(event);
+        } catch {
+          // Eventos sem corpo valido ainda provocam a ressincronizacao da sala.
+        }
+        window.setTimeout(refreshRoom, 80);
       });
+      chatSubscription = stompClient.subscribe(`/topic/rooms/${roomCode}/chat`, (message) => {
+        try {
+          renderChatMessage(JSON.parse(message.body));
+        } catch {
+          // Uma mensagem malformada nunca deve quebrar a partida.
+        }
+      });
+      chatErrorSubscription = stompClient.subscribe("/user/queue/chat-errors", (message) => {
+        try {
+          renderChatFeedback(JSON.parse(message.body)?.message);
+        } catch {
+          renderChatFeedback("Nao foi possivel enviar a mensagem.");
+        }
+      });
+      refreshRoom();
     },
     onStompError: () => {
       updateTurnLabel("Tempo real indisponivel");
+      window.showToast?.("Tempo real indisponível.", "warning");
     },
     onWebSocketError: () => {
       updateTurnLabel("Reconectando...");
+      if (!realtimeDisconnected) window.showToast?.("Reconectando...", "warning");
+      realtimeDisconnected = true;
+    },
+    onWebSocketClose: () => {
+      roomSubscription = null;
+      chatSubscription = null;
+      chatErrorSubscription = null;
+      if (!gameFinished) updateTurnLabel("Reconectando...");
+      if (!gameFinished && !realtimeDisconnected) window.showToast?.("Reconectando...", "warning");
+      realtimeDisconnected = !gameFinished;
     },
   });
 
@@ -437,7 +786,56 @@ function setupBoard() {
 }
 
 function clearHighlights() {
+  legalMovesRequestId += 1;
   document.querySelectorAll(".board-cell").forEach((cell) => cell.classList.remove("selected", "valid-move"));
+}
+
+function renderChatFeedback(message) {
+  if (!message) return;
+  notifyError({ message }, "Não foi possível enviar a mensagem.");
+}
+
+function renderChatMessage(message) {
+  if (!message?.userId || typeof message.text !== "string") return;
+
+  const currentUser = readUser();
+  const isOwnMessage = currentUser?.id === message.userId;
+  const shouldAutoScroll = isOwnMessage || isChatNearBottom();
+  const article = document.createElement("article");
+  article.className = "chat-message";
+  if (isOwnMessage) article.classList.add("own-message");
+
+  const author = document.createElement("span");
+  author.className = "chat-message-author";
+  const nickname = String(message.nickname || "Jogador").replace(/^@/, "");
+  author.textContent = `@${nickname}`;
+
+  const text = document.createElement("span");
+  text.className = "chat-message-text";
+  text.textContent = message.text;
+
+  const time = document.createElement("time");
+  time.className = "chat-message-time";
+  const timestamp = new Date(message.timestamp);
+  time.textContent = Number.isNaN(timestamp.getTime())
+    ? ""
+    : timestamp.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+
+  article.append(author, text, time);
+  chatMessages.appendChild(article);
+  if (shouldAutoScroll) scrollChatToBottom();
+}
+
+function isChatNearBottom() {
+  const distanceFromBottom = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight;
+  return distanceFromBottom <= 40;
+}
+
+function scrollChatToBottom() {
+  chatMessages.scrollTo({
+    top: chatMessages.scrollHeight,
+    behavior: "smooth",
+  });
 }
 
 function getCellFromPoint(clientX, clientY) {
@@ -494,6 +892,10 @@ function startPieceDrag(event, row, column, piece) {
   dragState = {
     ghost,
     sourcePiece: piece,
+    origin: { row, column },
+    startX: event.clientX,
+    startY: event.clientY,
+    didMove: false,
     offsetX: pieceRect.width / 2,
     offsetY: pieceRect.height / 2,
   };
@@ -507,6 +909,16 @@ function handlePieceDrag(event) {
   if (!dragState) return;
 
   event.preventDefault();
+
+  const distance = Math.hypot(
+    event.clientX - dragState.startX,
+    event.clientY - dragState.startY,
+  );
+
+  if (distance >= DRAG_THRESHOLD_PX) {
+    dragState.didMove = true;
+  }
+
   updateDragPiece(event.clientX, event.clientY);
 }
 
@@ -515,18 +927,43 @@ function finishPieceDrag(event) {
 
   event.preventDefault();
   const target = getCellFromPoint(event.clientX, event.clientY);
+  const { didMove, origin } = dragState;
+  const changedCell = target
+    && (target.row !== origin.row || target.column !== origin.column);
 
-  if (target) {
+  if (didMove && changedCell) {
+    suppressBoardClickUntil = performance.now() + 250;
     movePiece(target.row, target.column);
   }
 
   removeDragState();
 }
 
-function showMoves(row, column) {
+async function showMoves(row, column) {
   clearHighlights();
+  const requestId = legalMovesRequestId;
   const selected = boardElement.querySelector(`[data-row="${row}"][data-column="${column}"]`);
   selected?.classList.add("selected");
+
+  try {
+    const response = await apiRequest(
+      `/checkers/rooms/${encodeURIComponent(roomCode)}/state/legal-moves?row=${row}&column=${column}`,
+    );
+
+    const selectionChanged = !selectedCell
+      || selectedCell.row !== row
+      || selectedCell.column !== column;
+
+    if (requestId !== legalMovesRequestId || selectionChanged) return;
+
+    response.moves.forEach((move) => {
+      boardElement
+        .querySelector(`[data-row="${move.toRow}"][data-column="${move.toColumn}"]`)
+        ?.classList.add("valid-move");
+    });
+  } catch {
+    // O POST continua sendo a autoridade; falha no auxilio nao bloqueia a partida.
+  }
 }
 
 async function submitMove(from, to) {
@@ -558,7 +995,8 @@ async function submitMove(from, to) {
 
     syncBoardFromState(state);
   } catch (error) {
-    updateTurnLabel(error.message);
+    notifyError(error, "Movimento inválido.");
+    updateTurnLabel();
     clearHighlights();
   } finally {
     isSubmittingMove = false;
@@ -586,7 +1024,7 @@ function canSelectPiece(row, column) {
 }
 
 function movePiece(targetRow, targetColumn) {
-  if (!selectedCell) return;
+  if (!selectedCell || isSubmittingMove) return;
 
   const from = selectedCell;
   selectedCell = null;
@@ -594,6 +1032,10 @@ function movePiece(targetRow, targetColumn) {
 }
 
 function handleCellClick(row, column) {
+  if (performance.now() < suppressBoardClickUntil || isSubmittingMove) {
+    return;
+  }
+
   if (gameFinished || roomStatus === "FINISHED") {
     updateTurnLabel();
     return;
@@ -660,36 +1102,57 @@ function renderBoardCoordinates() {
 }
 
 copyInviteButton?.addEventListener("click", async () => {
-  await navigator.clipboard.writeText(roomCode);
-  copyInviteButton.innerHTML = '<i data-lucide="check"></i>';
-  window.lucide?.createIcons();
+  try {
+    await navigator.clipboard.writeText(roomCode);
+    copyInviteButton.innerHTML = '<i data-lucide="check"></i>';
+    window.lucide?.createIcons();
+    window.showToast?.("Convite copiado.", "success");
+  } catch (error) {
+    notifyError(error, "Não foi possível copiar o convite.");
+  }
+});
+
+drawOfferButton?.addEventListener("click", () => submitMatchAction("draw-offer"));
+drawAcceptButton?.addEventListener("click", () => submitMatchAction("draw-accept"));
+drawDeclineButton?.addEventListener("click", () => submitMatchAction("draw-decline"));
+resignButton?.addEventListener("click", openResignConfirmation);
+resignCancelButton?.addEventListener("click", closeResignConfirmation);
+resignConfirmButton?.addEventListener("click", confirmResignation);
+rematchRequestButton?.addEventListener("click", () => submitRematchAction("request"));
+rematchAcceptButton?.addEventListener("click", () => submitRematchAction("accept"));
+rematchDeclineButton?.addEventListener("click", () => submitRematchAction("decline"));
+resignConfirmationOverlay?.addEventListener("click", (event) => {
+  if (event.target === resignConfirmationOverlay) closeResignConfirmation();
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !resignConfirmationOverlay?.hidden) {
+    closeResignConfirmation();
+  }
 });
 
 chatForm?.addEventListener("submit", (event) => {
   event.preventDefault();
   const message = chatInput.value.trim();
-  if (!message) return;
+  if (!message || !stompClient?.connected) return;
 
-  const paragraph = document.createElement("p");
-  paragraph.className = "chat-message";
-  paragraph.textContent = message;
-  chatMessages.appendChild(paragraph);
+  stompClient.publish({
+    destination: `/app/rooms/${roomCode}/chat`,
+    body: JSON.stringify({ text: message }),
+  });
   chatInput.value = "";
-  chatMessages.scrollTop = chatMessages.scrollHeight;
 });
 
-if (requireAuthentication()) {
+async function initializeRoomPage() {
   setupBoard();
   configurePlayer();
   configureRoom();
   renderBoard();
-  loadPrivateRoom();
-  connectRoomRealtime();
   window.lucide?.createIcons();
+
+  const loaded = await loadRoom();
+  if (loaded) connectRoomRealtime();
 }
-function updateInvitationPanel(room) {
-  if (!invitationPanel) return;
-  const hasGuest = Boolean(room.guest);
-  const matchStarted = room.status === "IN_PROGRESS";
-  invitationPanel.hidden = hasGuest || matchStarted;
+
+if (requireAuthentication()) {
+  initializeRoomPage();
 }

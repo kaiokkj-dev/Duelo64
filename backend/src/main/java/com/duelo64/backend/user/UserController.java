@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -30,15 +31,25 @@ public class UserController {
         private final UserRepository userRepository;
         private final UserService userService;
         private final ApiRateLimiter apiRateLimiter;
+        private final PublicProfileService publicProfileService;
 
         public UserController(
                         UserRepository userRepository,
                         UserService userService,
-                        ApiRateLimiter apiRateLimiter) {
+                        ApiRateLimiter apiRateLimiter,
+                        PublicProfileService publicProfileService) {
 
                 this.userRepository = userRepository;
                 this.userService = userService;
                 this.apiRateLimiter = apiRateLimiter;
+                this.publicProfileService = publicProfileService;
+        }
+
+        @GetMapping("/{id}/public-profile")
+        public ResponseEntity<PublicProfileResponse> getPublicProfile(
+                        @PathVariable UUID id,
+                        @RequestParam(defaultValue = "CHECKERS") com.duelo64.backend.game.room.GameType gameType) {
+                return ResponseEntity.ok(publicProfileService.findById(id, gameType));
         }
 
         @GetMapping("/me")

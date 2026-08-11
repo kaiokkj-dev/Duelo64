@@ -175,6 +175,72 @@ class CheckersRulesTest {
         assertThat(rules.hasAnyLegalMove(board, PieceColor.BLACK)).isFalse();
     }
 
+    @Test
+    void legalMovesShouldReturnSimpleDestinations() {
+        var moves = rules.legalMoves(board(
+                "........", "........", "........", "........",
+                "........", "..w.....", "........", "........"),
+                PieceColor.WHITE, pos(5, 2), null);
+
+        assertThat(moves).extracting(move -> move.destination())
+                .containsExactlyInAnyOrder(pos(4, 1), pos(4, 3));
+        assertThat(moves).allMatch(move -> !move.capture());
+    }
+
+    @Test
+    void legalMovesShouldRespectMandatoryCapture() {
+        CheckersBoard board = board(
+                "........", "........", "........", "..b.....",
+                ".w......", "........", ".....w..", "........");
+
+        assertThat(rules.legalMoves(board, PieceColor.WHITE, pos(6, 5), null)).isEmpty();
+        assertThat(rules.legalMoves(board, PieceColor.WHITE, pos(4, 1), null))
+                .singleElement()
+                .satisfies(move -> {
+                    assertThat(move.destination()).isEqualTo(pos(2, 3));
+                    assertThat(move.capture()).isTrue();
+                });
+    }
+
+    @Test
+    void legalMovesShouldRespectMajorityRule() {
+        var moves = rules.legalMoves(board(
+                "........", "........", "........", "..b.....",
+                "........", "..b.b...", "...w....", "........"),
+                PieceColor.WHITE, pos(6, 3), null);
+
+        assertThat(moves).extracting(move -> move.destination())
+                .containsExactly(pos(4, 1));
+    }
+
+    @Test
+    void legalMovesShouldRespectForcedPieceDuringMultipleCapture() {
+        CheckersBoard initial = board(
+                "........", "........", "...b....", "........",
+                ".b......", "w...w...", "........", "........");
+        CheckersMoveResult first = rules.applyMoveDetailed(
+                initial, PieceColor.WHITE, pos(5, 0), pos(3, 2), null);
+
+        assertThat(rules.legalMoves(
+                first.board(), PieceColor.WHITE, pos(5, 4), pos(3, 2))).isEmpty();
+        assertThat(rules.legalMoves(
+                first.board(), PieceColor.WHITE, pos(3, 2), pos(3, 2)))
+                .extracting(move -> move.destination())
+                .containsExactly(pos(1, 4));
+    }
+
+    @Test
+    void legalMovesShouldReturnEveryKingDestination() {
+        var moves = rules.legalMoves(board(
+                "........", "........", "........", "........",
+                "........", "........", "........", "W......."),
+                PieceColor.WHITE, pos(7, 0), null);
+
+        assertThat(moves).hasSize(7);
+        assertThat(moves).extracting(move -> move.destination())
+                .contains(pos(6, 1), pos(3, 4), pos(0, 7));
+    }
+
     private CheckersBoard board(String... rows) {
         return CheckersBoard.fromNotation(String.join("", rows));
     }

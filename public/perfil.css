@@ -491,6 +491,45 @@
   gap: 10px;
 }
 
+.profile-game-tabs {
+  width: fit-content;
+  margin-top: 14px;
+  padding: 4px;
+  display: flex;
+  gap: 4px;
+  border: 1px solid var(--borda);
+  border-radius: 7px;
+  background: rgb(28 25 23 / 82%);
+}
+
+.profile-game-tab {
+  min-width: 104px;
+  min-height: 38px;
+  padding: 0 16px;
+  color: var(--texto-suave);
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 850;
+  cursor: pointer;
+  transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.profile-game-tab:hover { color: var(--texto); }
+
+.profile-game-tab.active {
+  color: var(--texto);
+  border-color: rgb(249 115 22 / 42%);
+  background: rgb(249 115 22 / 10%);
+}
+
+.profile-game-tab:focus-visible {
+  outline: 2px solid var(--laranja);
+  outline-offset: 2px;
+}
+
 .stat-card {
   min-height: 118px;
   padding: 18px;
@@ -592,6 +631,29 @@
   line-height: 1.65;
 }
 
+.history-list { padding-top: 14px; display: grid; gap: 8px; }
+.history-list[hidden], .history-empty[hidden] { display: none; }
+.history-match { padding: 14px 16px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; border: 1px solid var(--borda); border-radius: 7px; background: rgb(15 13 12 / 48%); }
+.history-opponent-avatar { width: 40px; height: 40px; display: grid; place-items: center; overflow: hidden; color: var(--texto); border: 1px solid var(--borda); border-radius: 7px; background: rgb(255 255 255 / 5%); font-size: 13px; font-weight: 850; }
+.history-opponent-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.history-opponent-avatar:is(a) { text-decoration: none; transition: border-color .16s ease, transform .16s ease; }
+.history-opponent-avatar:is(a):hover { border-color: var(--laranja); transform: translateY(-1px); }
+.history-match-copy { min-width: 0; display: grid; gap: 4px; }
+.history-match-copy strong { overflow: hidden; color: var(--texto); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.history-opponent-link { color: inherit; text-decoration: none; }
+.history-opponent-link:hover { color: var(--laranja); }
+.history-match-copy small { color: var(--texto-suave); font-size: 9px; }
+.history-result { text-align: right; }
+.history-result strong { display: block; font-size: 11px; }
+.history-rating-change { display: block; margin-top: 2px; font-size: 9px; font-weight: 800; }
+.history-rating-change.positive { color: #8fd18b; }
+.history-rating-change.negative { color: #df7d72; }
+.history-rating-change.neutral { color: var(--texto-suave); }
+.history-result time { color: var(--texto-suave); font-size: 8px; }
+.history-match.win .history-result strong { color: #8fd18b; }
+.history-match.loss .history-result strong { color: #df7d72; }
+.history-match.draw .history-result strong { color: #d7ad73; }
+
 .profile-loading .profile-shell {
   opacity: .55;
 }
@@ -608,6 +670,11 @@
   .avatar-grid {
     grid-template-columns: repeat(4, minmax(72px, 1fr));
   }
+}
+
+@media (max-width: 560px) {
+  .history-match { grid-template-columns: auto minmax(0, 1fr); }
+  .history-result { grid-column: 2; text-align: left; }
 }
 
 @media (max-width: 680px) {
@@ -640,6 +707,10 @@
 }
 
 @media (max-width: 520px) {
+  .profile-game-tabs,
+  .profile-game-tab {
+    width: 100%;
+  }
   .profile-header-actions {
     gap: 7px;
   }

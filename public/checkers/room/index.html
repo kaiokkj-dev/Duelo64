@@ -7,6 +7,7 @@
     <title>Sala de Damas — Duelo64</title>
     <link rel="icon" type="image/png" href="../../assets/duelo64-icon-512.png">
     <link rel="stylesheet" href="../../style.css">
+    <link rel="stylesheet" href="../../shared/toast.css">
     <link rel="stylesheet" href="room.css">
   </head>
   <body>
@@ -37,7 +38,6 @@
             </div>
           </div>
         </div>
-        <button class="room-menu-button" type="button" aria-label="Opções da partida"><i data-lucide="menu"></i></button>
       </div>
     </header>
 
@@ -50,7 +50,7 @@
 
         <article class="player player-opponent">
           <span class="player-photo player-photo-rival" id="opponent-photo">R</span>
-          <span class="player-copy"><strong id="opponent-name">Rival</strong><small id="opponent-meta">Aguardando</small></span>
+          <span class="player-copy"><strong id="opponent-name">Rival</strong><small id="opponent-meta">Aguardando</small><small class="opponent-presence" id="opponent-presence" hidden>Desconectado</small></span>
           <time class="player-clock" id="opponent-clock">10:00</time>
         </article>
 
@@ -77,8 +77,17 @@
         <section class="panel-section match-actions">
           <span class="panel-label">PARTIDA</span>
           <div class="action-list">
-            <button type="button"><i data-lucide="handshake"></i><span>Oferecer empate<small>Aguarde sua vez</small></span></button>
-            <button type="button"><i data-lucide="flag"></i><span>Abandonar partida<small>Conta como derrota</small></span></button>
+            <button id="draw-offer-button" type="button"><i data-lucide="handshake"></i><span>Oferecer empate<small id="draw-offer-status">Enviar proposta ao rival</small></span></button>
+            <button id="resign-button" type="button"><i data-lucide="flag"></i><span>Abandonar partida<small>Conta como derrota</small></span></button>
+          </div>
+        </section>
+
+        <section class="panel-section draw-offer-panel" id="draw-offer-panel" aria-live="polite" hidden>
+          <span class="panel-label">OFERTA DE EMPATE</span>
+          <h2>Seu adversário ofereceu empate.</h2>
+          <div class="draw-offer-actions">
+            <button id="draw-accept-button" class="draw-accept-button" type="button">Aceitar</button>
+            <button id="draw-decline-button" type="button">Recusar</button>
           </div>
         </section>
 
@@ -88,16 +97,52 @@
             <p class="system-message">Converse com respeito. A partida está sendo preparada.</p>
           </div>
           <form class="chat-form" id="chat-form">
-            <input id="chat-input" maxlength="180" placeholder="Escreva uma mensagem..." autocomplete="off">
+            <input id="chat-input" maxlength="300" placeholder="Escreva uma mensagem..." autocomplete="off">
             <button type="submit" aria-label="Enviar mensagem"><i data-lucide="send"></i></button>
           </form>
         </section>
       </aside>
     </main>
 
+    <div class="result-overlay" id="result-overlay" role="dialog" aria-modal="true" aria-labelledby="result-title" hidden>
+      <section class="result-card">
+        <span class="result-icon" aria-hidden="true"><i data-lucide="trophy"></i></span>
+        <span class="panel-label">PARTIDA ENCERRADA</span>
+        <h2 id="result-title">Você venceu!</h2>
+        <p id="result-reason">O adversário ficou sem peças.</p>
+        <div class="rematch-response" id="rematch-response" hidden>
+          <strong>Seu adversário quer uma revanche.</strong>
+          <div class="rematch-response-actions">
+            <button id="rematch-accept-button" type="button">Aceitar</button>
+            <button id="rematch-decline-button" type="button">Recusar</button>
+          </div>
+        </div>
+        <p class="rematch-feedback" id="rematch-feedback" aria-live="polite"></p>
+        <div class="result-actions">
+          <button class="result-rematch-button" id="rematch-request-button" type="button">Pedir revanche</button>
+          <a class="result-home-button" href="../../index.html">Voltar ao início</a>
+        </div>
+      </section>
+    </div>
+
+    <div class="result-overlay" id="resign-confirmation-overlay" role="dialog" aria-modal="true" aria-labelledby="resign-confirmation-title" hidden>
+      <section class="result-card confirmation-card">
+        <span class="result-icon" aria-hidden="true"><i data-lucide="flag"></i></span>
+        <span class="panel-label">CONFIRMAR AÇÃO</span>
+        <h2 id="resign-confirmation-title">Abandonar partida?</h2>
+        <p>Tem certeza que deseja abandonar? A partida será encerrada e contará como derrota.</p>
+        <p class="confirmation-feedback" id="resign-confirmation-feedback" role="status" aria-live="polite" hidden></p>
+        <div class="confirmation-actions">
+          <button id="resign-cancel-button" type="button">Continuar jogando</button>
+          <button id="resign-confirm-button" class="confirmation-danger-button" type="button">Abandonar partida</button>
+        </div>
+      </section>
+    </div>
+
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script src="https://unpkg.com/@stomp/stompjs@7.1.1/bundles/stomp.umd.min.js"></script>
     <script src="../../shared/account-menu.js"></script>
+    <script src="../../shared/toast.js"></script>
     <script src="room.js"></script>
   </body>
 </html>

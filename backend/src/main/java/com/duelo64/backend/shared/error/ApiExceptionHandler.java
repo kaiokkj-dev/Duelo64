@@ -6,9 +6,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.duelo64.backend.auth.InvalidAuthCodeException;
 import com.duelo64.backend.game.checkers.domain.InvalidCheckersMoveException;
+import com.duelo64.backend.game.chess.domain.InvalidChessMoveException;
 import com.duelo64.backend.game.room.RoomNotFoundException;
 import com.duelo64.backend.game.room.RoomUnavailableException;
 import com.duelo64.backend.user.AvatarUploadException;
@@ -18,6 +20,22 @@ import com.duelo64.backend.shared.ratelimit.RateLimitException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+
+        @ExceptionHandler(ResponseStatusException.class)
+        public ResponseEntity<ApiErrorResponse> handleResponseStatus(
+                        ResponseStatusException exception) {
+
+                String message = exception.getReason() == null || exception.getReason().isBlank()
+                                ? "Nao foi possivel concluir a acao."
+                                : exception.getReason();
+                ApiErrorResponse response = new ApiErrorResponse(
+                                "HTTP_" + exception.getStatusCode().value(),
+                                message);
+
+                return ResponseEntity
+                                .status(exception.getStatusCode())
+                                .body(response);
+        }
 
         @ExceptionHandler(RateLimitException.class)
         public ResponseEntity<ApiErrorResponse> handleRateLimit(
@@ -137,5 +155,13 @@ public class ApiExceptionHandler {
                 return ResponseEntity
                                 .status(HttpStatus.BAD_REQUEST)
                                 .body(response);
+        }
+
+        @ExceptionHandler(InvalidChessMoveException.class)
+        public ResponseEntity<ApiErrorResponse> handleInvalidChessMove(
+                        InvalidChessMoveException exception) {
+                return ResponseEntity
+                                .status(HttpStatus.BAD_REQUEST)
+                                .body(new ApiErrorResponse("INVALID_CHESS_MOVE", exception.getMessage()));
         }
 }

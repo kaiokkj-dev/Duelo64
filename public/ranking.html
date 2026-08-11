@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta id="ranking-description" name="description" content="Ranking ranqueado de Damas do Duelo64." />
+    <title>Ranking de Damas — Duelo64</title>
+    <link rel="icon" type="image/png" href="assets/duelo64-icon-512.png" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="ranking.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner ranking-header-inner">
+        <a class="header-brand" href="index.html" aria-label="Duelo64 — Página inicial">
+          <img class="brand-logo" src="assets/duelo64-logo-transparent.png" alt="Duelo64" />
+        </a>
+        <a class="ranking-back-link" href="index.html">
+          <i data-lucide="arrow-left" aria-hidden="true"></i>
+          Voltar ao início
+        </a>
+      </div>
+    </header>
+
+    <main class="ranking-page">
+      <section class="ranking-shell" aria-labelledby="ranking-title">
+        <header class="ranking-intro">
+          <div>
+            <div class="ranking-game-selector" role="group" aria-label="Escolher modalidade do ranking">
+              <button type="button" data-ranking-game="checkers" aria-pressed="true">Damas</button>
+              <button type="button" data-ranking-game="chess" aria-pressed="false">Xadrez</button>
+            </div>
+            <span class="ranking-eyebrow" id="ranking-eyebrow">Competitivo · Damas Brasileiras</span>
+            <h1 id="ranking-title">Ranking de jogadores</h1>
+            <p>Classificação baseada exclusivamente nas partidas ranqueadas.</p>
+          </div>
+          <aside class="my-ranking" id="my-ranking" hidden>
+            <span>Sua posição</span>
+            <strong id="my-ranking-position">—</strong>
+            <small id="my-ranking-rating">1000 Elo</small>
+          </aside>
+        </header>
+
+        <div class="ranking-table" id="ranking-table" role="table" aria-label="Ranking de Damas Brasileiras">
+          <div class="ranking-row ranking-table-header" role="row">
+            <span role="columnheader">#</span>
+            <span role="columnheader">Jogador</span>
+            <span role="columnheader">Elo</span>
+            <span role="columnheader">Partidas</span>
+            <span role="columnheader">V/D/E</span>
+                        <span role="columnheader">Taxa de vitória</span>
+          </div>
+          <div class="ranking-list" id="ranking-list"></div>
+        </div>
+
+        <div class="ranking-empty" id="ranking-empty" hidden>
+          <strong>O ranking ainda está vazio.</strong>
+          <p>As primeiras partidas RANKED aparecerão aqui.</p>
+        </div>
+
+        <nav class="ranking-pagination" aria-label="Paginação do ranking">
+          <button id="ranking-previous" type="button">
+            <i data-lucide="chevron-left" aria-hidden="true"></i> Anterior
+          </button>
+          <span id="ranking-page-label">Página 1</span>
+          <button id="ranking-next" type="button">
+            Próxima <i data-lucide="chevron-right" aria-hidden="true"></i>
+          </button>
+        </nav>
+      </section>
+    </main>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="ranking.js"></script>
+  </body>
+</html>

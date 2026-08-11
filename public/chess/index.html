@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Escolha como jogar Xadrez no Duelo64.">
+    <title>Xadrez — Duelo64</title>
+    <link rel="icon" type="image/png" href="../assets/duelo64-icon-512.png">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="chess.css">
+  </head>
+  <body>
+    <header class="game-header">
+      <a class="game-brand" href="../index.html" aria-label="Voltar para o Duelo64">
+        <img src="../assets/duelo64-logo-transparent.png" alt="Duelo64">
+      </a>
+      <div class="game-header-actions">
+        <div
+          class="shared-account"
+          data-shared-account
+          data-profile-url="../perfil.html"
+          data-login-url="../entrar.html"
+          data-home-url="../index.html"
+        >
+          <a class="shared-account-login" data-account-login href="../entrar.html" hidden>Entrar no Duelo</a>
+          <div class="user-account" data-account-auth hidden>
+            <button class="user-account-button" data-account-button type="button" aria-expanded="false">
+              <span class="user-account-avatar" data-account-avatar>J</span>
+              <span class="user-account-nickname" data-account-nickname>@jogador</span>
+              <i data-lucide="chevron-down" aria-hidden="true"></i>
+            </button>
+            <div class="user-account-menu" data-account-panel hidden>
+              <div class="user-account-details">
+                <strong data-account-menu-nickname>@jogador</strong>
+                <small data-account-email>email@exemplo.com</small>
+              </div>
+              <a class="user-profile-link" data-account-profile href="../perfil.html"><i data-lucide="user-round"></i>Ver meu perfil</a>
+              <button class="user-logout-button" data-account-logout type="button"><i data-lucide="log-out"></i>Sair da conta</button>
+            </div>
+          </div>
+        </div>
+        <a class="header-back" href="../index.html"><i data-lucide="arrow-left"></i> Voltar</a>
+      </div>
+    </header>
+
+    <main class="lobby-page">
+      <section class="lobby-intro">
+        <span class="section-kicker">DUELO64 · XADREZ</span>
+        <h1>Como você quer jogar?</h1>
+        <p>Encontre um adversário agora ou prepare uma sala só para seus amigos.</p>
+      </section>
+
+      <section class="play-options" aria-label="Modos de partida">
+        <article class="play-card play-card-featured">
+          <span class="card-number">01</span>
+          <span class="card-icon"><i data-lucide="swords"></i></span>
+          <div>
+            <span class="card-label">PARTIDA PÚBLICA</span>
+            <h2>Jogar agora</h2>
+            <p>Entre na fila e enfrente automaticamente outro jogador disponível.</p>
+          </div>
+          <div class="time-selector" aria-label="Tempo da partida">
+            <span>Tempo</span>
+            <button class="time-option" type="button" data-time="5">5 min</button>
+            <button class="time-option active" type="button" data-time="10">10 min</button>
+          </div>
+          <button class="button button-primary option-action" id="quick-play" type="button">
+            Procurar adversário <i data-lucide="arrow-right"></i>
+          </button>
+          <small class="matchmaking-message" id="matchmaking-message" role="status" aria-live="polite"></small>
+        </article>
+
+        <article class="play-card">
+          <span class="card-number">02</span>
+          <span class="card-icon"><i data-lucide="link-2"></i></span>
+          <div>
+            <span class="card-label">CONVITE DIRETO</span>
+            <h2>Criar sala privada</h2>
+            <p>Gere um código exclusivo e envie o convite para quem você quiser enfrentar.</p>
+          </div>
+          <button class="button button-secondary option-action" id="create-private-room" type="button">
+            Criar sala <i data-lucide="plus"></i>
+          </button>
+        </article>
+
+        <article class="play-card">
+          <span class="card-number">03</span>
+          <span class="card-icon"><i data-lucide="door-open"></i></span>
+          <div>
+            <span class="card-label">CÓDIGO DE ACESSO</span>
+            <h2>Entrar em uma sala</h2>
+            <p>Digite o código recebido para encontrar seu amigo na mesa.</p>
+          </div>
+          <form class="join-form" id="join-form">
+            <label for="room-code">Código da sala</label>
+            <div class="join-control">
+              <input id="room-code" name="roomCode" maxlength="6" autocomplete="off" placeholder="EX: A7K9P2" required>
+              <button type="submit" aria-label="Entrar na sala"><i data-lucide="arrow-right"></i></button>
+            </div>
+            <small class="form-message" id="join-message" role="status"></small>
+          </form>
+        </article>
+      </section>
+
+      <section class="private-room-result" id="private-room-result" hidden aria-live="polite">
+        <div>
+          <span class="card-label">SALA CRIADA</span>
+          <h2>Seu convite está pronto.</h2>
+          <p>Compartilhe o código abaixo. A partida começa quando o segundo jogador entrar.</p>
+        </div>
+        <div class="generated-code">
+          <strong id="generated-code">------</strong>
+          <button id="copy-room-code" type="button"><i data-lucide="copy"></i> Copiar</button>
+        </div>
+        <a class="button button-primary" id="enter-created-room" href="room/index.html">Entrar na sala</a>
+      </section>
+
+      <aside class="lobby-note">
+        <i data-lucide="shield-check"></i>
+        <p><strong>O servidor decide.</strong> Todas as jogadas serão validadas pelo Duelo64 antes de aparecerem para o adversário.</p>
+      </aside>
+    </main>
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://unpkg.com/@stomp/stompjs@7.1.1/bundles/stomp.umd.min.js"></script>
+    <script src="../shared/account-menu.js"></script>
+    <script src="chess.js"></script>
+  </body>
+</html>

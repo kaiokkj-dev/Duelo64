@@ -36,6 +36,15 @@ public class SecurityConfig {
                                                                 "/ws/**")
                                                 .permitAll()
                                                 .requestMatchers(
+                                                                HttpMethod.GET,
+                                                                "/api/v1/users/*/public-profile")
+                                                .permitAll()
+                                                .requestMatchers(
+                                                                HttpMethod.GET,
+                                                                "/api/v1/rankings/checkers",
+                                                                "/api/v1/rankings/chess")
+                                                .permitAll()
+                                                .requestMatchers(
                                                                 HttpMethod.POST,
                                                                 "/api/v1/auth/codes",
                                                                 "/api/v1/auth/codes/verify")
@@ -58,6 +67,7 @@ public class SecurityConfig {
                 configuration.setAllowedMethods(List.of(
                                 "GET",
                                 "POST",
+                                "DELETE",
                                 "PATCH",
                                 "OPTIONS"));
                 configuration.setAllowedHeaders(List.of(

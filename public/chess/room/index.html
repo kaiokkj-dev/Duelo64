@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sala de Xadrez no Duelo64.">
+    <title>Sala de Xadrez — Duelo64</title>
+    <link rel="icon" type="image/png" href="../../assets/duelo64-icon-512.png">
+    <link rel="stylesheet" href="../../style.css">
+    <link rel="stylesheet" href="../../shared/toast.css">
+    <link rel="stylesheet" href="room.css">
+  </head>
+  <body>
+    <header class="room-header">
+      <a class="room-brand" href="../index.html"><img src="../../assets/duelo64-logo-transparent.png" alt="Duelo64"></a>
+      <div class="room-meta">
+        <div
+          class="shared-account"
+          data-shared-account
+          data-profile-url="../../perfil.html"
+          data-login-url="../../entrar.html"
+          data-home-url="../../index.html"
+        >
+          <a class="shared-account-login" data-account-login href="../../entrar.html" hidden>Entrar no Duelo</a>
+          <div class="user-account" data-account-auth hidden>
+            <button class="user-account-button" data-account-button type="button" aria-expanded="false">
+              <span class="user-account-avatar" data-account-avatar>J</span>
+              <span class="user-account-nickname" data-account-nickname>@jogador</span>
+              <i data-lucide="chevron-down" aria-hidden="true"></i>
+            </button>
+            <div class="user-account-menu" data-account-panel hidden>
+              <div class="user-account-details">
+                <strong data-account-menu-nickname>@jogador</strong>
+                <small data-account-email>email@exemplo.com</small>
+              </div>
+              <a class="user-profile-link" data-account-profile href="../../perfil.html"><i data-lucide="user-round"></i>Ver meu perfil</a>
+              <button class="user-logout-button" data-account-logout type="button"><i data-lucide="log-out"></i>Sair da conta</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="room-page">
+      <section class="match-area">
+        <div class="match-heading">
+          <div><span>XADREZ</span><strong id="match-mode" hidden>Partida pública</strong><small id="room-code-header" hidden>SALA ------</small></div>
+          <span class="match-state" id="match-state">Sua vez</span>
+        </div>
+
+        <article class="player player-opponent">
+          <span class="player-photo player-photo-rival" id="opponent-photo">R</span>
+          <span class="player-copy"><strong id="opponent-name">Rival</strong><small id="opponent-meta">Aguardando</small><small class="opponent-presence" id="opponent-presence" hidden>Desconectado</small></span>
+          <time class="player-clock" id="opponent-clock">10:00</time>
+        </article>
+
+        <div class="board-shell">
+          <div class="board-coordinates board-files" aria-hidden="true"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span></div>
+          <div class="room-board" id="room-board" role="grid" aria-label="Tabuleiro de Xadrez"></div>
+        </div>
+
+        <article class="player player-you">
+          <span class="player-photo" id="player-photo">J</span>
+          <span class="player-copy"><strong id="player-name">Você</strong><small id="player-meta">Prata · 1.264</small></span>
+          <time class="player-clock active" id="player-clock">10:00</time>
+        </article>
+      </section>
+
+      <aside class="match-panel">
+        <section class="panel-section invitation-panel" id="invitation-panel" hidden>
+          <span class="panel-label">SALA PRIVADA</span>
+          <h2>Convide seu adversário</h2>
+          <p>A sala ficará aguardando até seu amigo entrar pelo código.</p>
+          <div class="room-invite-code"><strong id="room-invite-code">------</strong><button id="copy-invite" type="button" aria-label="Copiar código"><i data-lucide="copy"></i></button></div>
+        </section>
+
+        <section class="panel-section match-actions">
+          <span class="panel-label">PARTIDA</span>
+          <div class="action-list">
+            <button id="draw-offer-button" type="button"><i data-lucide="handshake"></i><span>Oferecer empate<small id="draw-offer-status">Enviar proposta ao rival</small></span></button>
+            <button id="resign-button" type="button"><i data-lucide="flag"></i><span>Abandonar partida<small>Conta como derrota</small></span></button>
+          </div>
+        </section>
+
+        <section class="panel-section draw-offer-panel" id="draw-offer-panel" aria-live="polite" hidden>
+          <span class="panel-label">OFERTA DE EMPATE</span>
+          <h2>Seu adversário ofereceu empate.</h2>
+          <div class="draw-offer-actions">
+            <button id="draw-accept-button" class="draw-accept-button" type="button">Aceitar</button>
+            <button id="draw-decline-button" type="button">Recusar</button>
+          </div>
+        </section>
+
+        <section class="panel-section chat-panel">
+          <div class="chat-heading"><span class="panel-label">CHAT DA PARTIDA</span><i data-lucide="message-circle"></i></div>
+          <div class="chat-messages" id="chat-messages">
+            <p class="system-message">Converse com respeito. A partida está sendo preparada.</p>
+          </div>
+          <form class="chat-form" id="chat-form">
+            <input id="chat-input" maxlength="300" placeholder="Escreva uma mensagem..." autocomplete="off">
+            <button type="submit" aria-label="Enviar mensagem"><i data-lucide="send"></i></button>
+          </form>
+        </section>
+      </aside>
+    </main>
+
+    <div class="result-overlay" id="result-overlay" role="dialog" aria-modal="true" aria-labelledby="result-title" hidden>
+      <section class="result-card">
+        <span class="result-icon" aria-hidden="true"><i data-lucide="trophy"></i></span>
+        <span class="panel-label">PARTIDA ENCERRADA</span>
+        <h2 id="result-title">Você venceu!</h2>
+        <p id="result-reason">O adversário ficou sem peças.</p>
+        <div class="rematch-response" id="rematch-response" hidden>
+          <strong>Seu adversário quer uma revanche.</strong>
+          <div class="rematch-response-actions">
+            <button id="rematch-accept-button" type="button">Aceitar</button>
+            <button id="rematch-decline-button" type="button">Recusar</button>
+          </div>
+        </div>
+        <p class="rematch-feedback" id="rematch-feedback" aria-live="polite"></p>
+        <div class="result-actions">
+          <button class="result-rematch-button" id="rematch-request-button" type="button">Pedir revanche</button>
+          <a class="result-home-button" href="../../index.html">Voltar ao início</a>
+        </div>
+      </section>
+    </div>
+
+    <div class="result-overlay" id="resign-confirmation-overlay" role="dialog" aria-modal="true" aria-labelledby="resign-confirmation-title" hidden>
+      <section class="result-card confirmation-card">
+        <span class="result-icon" aria-hidden="true"><i data-lucide="flag"></i></span>
+        <span class="panel-label">CONFIRMAR AÇÃO</span>
+        <h2 id="resign-confirmation-title">Abandonar partida?</h2>
+        <p>Tem certeza que deseja abandonar? A partida será encerrada e contará como derrota.</p>
+        <p class="confirmation-feedback" id="resign-confirmation-feedback" role="status" aria-live="polite" hidden></p>
+        <div class="confirmation-actions">
+          <button id="resign-cancel-button" type="button">Continuar jogando</button>
+          <button id="resign-confirm-button" class="confirmation-danger-button" type="button">Abandonar partida</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="result-overlay" id="promotion-overlay" role="dialog" aria-modal="true" aria-labelledby="promotion-title" hidden>
+      <section class="result-card promotion-card">
+        <span class="panel-label">PROMOÇÃO</span>
+        <h2 id="promotion-title">Escolha uma peça</h2>
+        <div class="promotion-options">
+          <button type="button" data-promotion="QUEEN"><span>♕</span>Rainha</button>
+          <button type="button" data-promotion="ROOK"><span>♖</span>Torre</button>
+          <button type="button" data-promotion="BISHOP"><span>♗</span>Bispo</button>
+          <button type="button" data-promotion="KNIGHT"><span>♘</span>Cavalo</button>
+        </div>
+      </section>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://unpkg.com/@stomp/stompjs@7.1.1/bundles/stomp.umd.min.js"></script>
+    <script src="../../shared/account-menu.js"></script>
+    <script src="../../shared/toast.js"></script>
+    <script src="room.js"></script>
+  </body>
+</html>

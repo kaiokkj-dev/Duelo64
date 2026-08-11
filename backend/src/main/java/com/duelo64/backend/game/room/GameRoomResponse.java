@@ -8,13 +8,17 @@ public record GameRoomResponse(
         String code,
         GameType gameType,
         RoomType roomType,
+        MatchType matchType,
         RoomStatus status,
         int timeControlMinutes,
         RoomPlayerResponse host,
         RoomPlayerResponse guest,
         Instant createdAt,
         Instant startedAt,
-        Instant finishedAt) {
+        Instant finishedAt,
+        boolean rematchPending,
+        UUID rematchRequestedByUserId,
+        String rematchRoomCode) {
 
     public static GameRoomResponse from(GameRoom room) {
         return new GameRoomResponse(
@@ -22,12 +26,16 @@ public record GameRoomResponse(
                 room.getCode(),
                 room.getGameType(),
                 room.getRoomType(),
+                room.getMatchType(),
                 room.getStatus(),
                 room.getTimeControlMinutes(),
                 RoomPlayerResponse.from(room.getHost()),
                 RoomPlayerResponse.from(room.getGuest()),
                 room.getCreatedAt(),
                 room.getStartedAt(),
-                room.getFinishedAt());
+                room.getFinishedAt(),
+                room.hasPendingRematch(),
+                room.getRematchRequestedByUserId(),
+                room.getRematchRoomCode());
     }
 }

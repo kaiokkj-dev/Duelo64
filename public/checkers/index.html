@@ -67,6 +67,7 @@
           <button class="button button-primary option-action" id="quick-play" type="button">
             Procurar adversário <i data-lucide="arrow-right"></i>
           </button>
+          <small class="matchmaking-message" id="matchmaking-message" role="status" aria-live="polite"></small>
         </article>
 
         <article class="play-card">
@@ -121,6 +122,7 @@
     </main>
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://unpkg.com/@stomp/stompjs@7.1.1/bundles/stomp.umd.min.js"></script>
     <script src="../shared/account-menu.js"></script>
     <script src="checkers.js"></script>
   </body>

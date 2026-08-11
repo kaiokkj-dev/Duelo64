@@ -39,6 +39,10 @@ public class GameRoom {
     private RoomType roomType;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "match_type", nullable = false, length = 16)
+    private MatchType matchType;
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)
     private RoomStatus status;
 
@@ -65,20 +69,39 @@ public class GameRoom {
     @Column(name = "finished_at")
     private Instant finishedAt;
 
+    @Column(name = "rematch_requested_by_user_id")
+    private UUID rematchRequestedByUserId;
+
+    @Column(name = "rematch_room_code", length = 6)
+    private String rematchRoomCode;
+
     protected GameRoom() {
     }
 
-    private GameRoom(String code, GameType gameType, RoomType roomType, int timeControlMinutes, User host) {
+    private GameRoom(String code, GameType gameType, RoomType roomType, MatchType matchType, int timeControlMinutes, User host) {
         this.code = code;
         this.gameType = gameType;
         this.roomType = roomType;
+        this.matchType = matchType;
         this.timeControlMinutes = timeControlMinutes;
         this.host = host;
         this.status = RoomStatus.WAITING;
     }
 
+    public static GameRoom privateRoom(String code, GameType gameType, int timeControlMinutes, User host) {
+        return new GameRoom(code, gameType, RoomType.PRIVATE, MatchType.FRIENDLY, timeControlMinutes, host);
+    }
+
+    public static GameRoom rankedRoom(String code, GameType gameType, int timeControlMinutes, User host) {
+        return new GameRoom(code, gameType, RoomType.PUBLIC, MatchType.RANKED, timeControlMinutes, host);
+    }
+
     public static GameRoom privateCheckers(String code, int timeControlMinutes, User host) {
-        return new GameRoom(code, GameType.CHECKERS, RoomType.PRIVATE, timeControlMinutes, host);
+        return privateRoom(code, GameType.CHECKERS, timeControlMinutes, host);
+    }
+
+    public static GameRoom rankedCheckers(String code, int timeControlMinutes, User host) {
+        return rankedRoom(code, GameType.CHECKERS, timeControlMinutes, host);
     }
 
     @PrePersist
@@ -112,6 +135,22 @@ public class GameRoom {
         return guest != null;
     }
 
+    public void requestRematch(UUID userId) {
+        this.rematchRequestedByUserId = userId;
+    }
+
+    public void declineRematch() {
+        this.rematchRequestedByUserId = null;
+    }
+
+    public void linkRematch(String newRoomCode) {
+        this.rematchRoomCode = newRoomCode;
+    }
+
+    public boolean hasPendingRematch() {
+        return rematchRequestedByUserId != null && rematchRoomCode == null;
+    }
+
     public UUID getId() {
         return id;
     }
@@ -126,6 +165,10 @@ public class GameRoom {
 
     public RoomType getRoomType() {
         return roomType;
+    }
+
+    public MatchType getMatchType() {
+        return matchType;
     }
 
     public RoomStatus getStatus() {
@@ -154,5 +197,13 @@ public class GameRoom {
 
     public Instant getFinishedAt() {
         return finishedAt;
+    }
+
+    public UUID getRematchRequestedByUserId() {
+        return rematchRequestedByUserId;
+    }
+
+    public String getRematchRoomCode() {
+        return rematchRoomCode;
     }
 }
