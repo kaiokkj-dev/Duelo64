@@ -3,9 +3,7 @@
 
   const LOCAL_BACKEND_URL = "http://localhost:8080";
 
-  // Depois de publicar o backend, coloque aqui a URL HTTPS fornecida pelo Koyeb.
-  // Exemplo: "https://duelo64-api-seuusuario.koyeb.app"
-  const PRODUCTION_BACKEND_URL = "";
+  const PRODUCTION_BACKEND_URL = "https://site--duelo64-api--f8krwqq5fxpkc.code.run";
 
   const isLocalFrontend = window.location.protocol === "file:"
     || ["localhost", "127.0.0.1"].includes(window.location.hostname);
