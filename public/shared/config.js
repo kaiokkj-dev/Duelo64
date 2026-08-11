@@ -3,7 +3,7 @@
 
   const LOCAL_BACKEND_URL = "http://localhost:8080";
 
-  const PRODUCTION_BACKEND_URL = "https://site--duelo64-api--f8krwqq5fxpkc.code.run";
+  const PRODUCTION_BACKEND_URL = "https://site--duelo64-api--f8krwqq5fxpk.code.run";
 
   const isLocalFrontend = window.location.protocol === "file:"
     || ["localhost", "127.0.0.1"].includes(window.location.hostname);
