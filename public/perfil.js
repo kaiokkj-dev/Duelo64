@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:8080/api/v1";
+const { API_BASE_URL } = window.Duelo64Config;
 const TOKEN_STORAGE_KEY = "duelo64.accessToken";
 const USER_STORAGE_KEY = "duelo64.user";
 const requestedProfileId = new URLSearchParams(window.location.search).get("id");

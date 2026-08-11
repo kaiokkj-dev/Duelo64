@@ -1,6 +1,5 @@
 const TOKEN_STORAGE_KEY = "duelo64.accessToken";
-const API_BASE_URL = "http://localhost:8080/api/v1";
-const WS_BASE_URL = "ws://localhost:8080/ws";
+const { API_BASE_URL, WS_BASE_URL } = window.Duelo64Config;
 
 const timeOptions = document.querySelectorAll(".time-option");
 const quickPlayButton = document.querySelector("#quick-play");

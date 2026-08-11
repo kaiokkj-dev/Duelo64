@@ -4,5 +4,14 @@
 *.log
 .DS_Store
 
+# Credenciais e certificados locais
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+
 # O backend Java será configurado posteriormente
 target/

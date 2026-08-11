@@ -8,6 +8,8 @@ import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBr
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
+import java.util.Arrays;
+
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
@@ -19,7 +21,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
             @Value("${ALLOWED_ORIGINS:http://127.0.0.1:5500,http://localhost:5500}") String allowedOrigins,
             WebSocketAuthChannelInterceptor authChannelInterceptor) {
 
-        this.allowedOrigins = allowedOrigins.split(",");
+        this.allowedOrigins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isBlank())
+                .toArray(String[]::new);
         this.authChannelInterceptor = authChannelInterceptor;
     }
 

@@ -1,7 +1,6 @@
 const USER_STORAGE_KEY = "duelo64.user";
 const TOKEN_STORAGE_KEY = "duelo64.accessToken";
-const API_BASE_URL = "http://localhost:8080/api/v1";
-const WS_BASE_URL = "ws://localhost:8080/ws";
+const { API_BASE_URL, WS_BASE_URL } = window.Duelo64Config;
 const params = new URLSearchParams(window.location.search);
 const mode = params.get("mode") || "public";
 const roomCode = params.get("code") || "";
