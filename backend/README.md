@@ -1,32 +1,52 @@
 # Duelo64 API
 
-Backend da plataforma Duelo64, desenvolvido com Java e Spring Boot.
+Backend da plataforma **Duelo64**, desenvolvido com Java e Spring Boot.
+
+A API é responsável por autenticação, regras dos jogos, salas multiplayer, matchmaking ranqueado, Elo, histórico, cronômetros e comunicação em tempo real.
 
 ## Tecnologias
 
-- Java 21
-- Spring Boot 4
+- Java
+- Spring Boot
 - Spring Web MVC
 - Spring Security
 - Spring Data JPA
+- Spring WebSocket / STOMP
+- JWT
 - PostgreSQL
+- Neon
 - Flyway
 - Maven Wrapper
 
+## Funcionalidades principais
+
+- Autenticação por código de e-mail
+- Sessão com JWT
+- Salas privadas
+- Matchmaking ranqueado
+- Elo independente por modalidade
+- Histórico de partidas
+- Ranking
+- WebSocket/STOMP
+- Presença e reconexão
+- Chat em tempo real
+- Cronômetros autoritativos
+- Revanche
+
+### Jogos
+
+- Damas Brasileiras
+- Xadrez
+
+As regras são validadas pelo backend. O frontend nunca é a autoridade sobre uma jogada.
+
 ## Banco de dados
 
-A aplicação aceita PostgreSQL local ou hospedado no Supabase. Use o arquivo
-`.env.example` como referência e nunca envie credenciais reais ao GitHub.
+O projeto utiliza PostgreSQL hospedado no Neon.
 
-## Comandos
+As alterações de schema são controladas através de migrations do Flyway.
 
-```powershell
-.\mvnw.cmd test
-.\mvnw.cmd spring-boot:run
-```
-
-Com o PostgreSQL configurado, a API responde em:
+Use o arquivo:
 
 ```text
-GET http://localhost:8080/api/v1/status
-```
+.env.example
