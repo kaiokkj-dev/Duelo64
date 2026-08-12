@@ -25,8 +25,8 @@
 .player-clock.active { color: var(--laranja-suave); background: rgb(249 115 22 / 10%); }
 
 .board-shell { position: relative; padding-bottom: 15px; }
-.room-board { width: min(100%, calc(100dvh - 330px)); aspect-ratio: 1; margin: 0 auto; display: grid; grid-template-columns: repeat(8, 1fr); overflow: hidden; border: 1px solid #4b372b; border-radius: 7px; background: #d8c6b0; box-shadow: 0 12px 34px rgb(0 0 0 / 22%); transform: translateZ(0); backface-visibility: hidden; }
-.board-cell { position: relative; display: grid; place-items: center; border: 0; padding: 0; backface-visibility: hidden; }
+.room-board { width: min(100%, calc(100dvh - 330px)); aspect-ratio: 1; margin: 0 auto; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(8, minmax(0, 1fr)); overflow: hidden; border: 1px solid #4b372b; border-radius: 7px; background: #d8c6b0; box-shadow: 0 12px 34px rgb(0 0 0 / 22%); transform: translateZ(0); backface-visibility: hidden; }
+.board-cell { position: relative; width: 100%; min-width: 0; height: 100%; min-height: 0; display: grid; place-items: center; border: 0; padding: 0; backface-visibility: hidden; }
 .board-cell.light { background: #d9c7b2; }
 .board-cell.dark { background: #875538; cursor: pointer; }
 .board-cell.selected { background: #ce611f; }
