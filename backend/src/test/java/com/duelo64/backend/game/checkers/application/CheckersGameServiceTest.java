@@ -78,7 +78,7 @@ class CheckersGameServiceTest {
         CheckersGameState state = mock(CheckersGameState.class);
         when(state.getRoom()).thenReturn(room);
         when(room.getStatus()).thenReturn(RoomStatus.FINISHED);
-        when(stateRepository.findByRoomCode("ABC123")).thenReturn(Optional.of(state));
+        when(stateRepository.findByRoomCodeForUpdate("ABC123")).thenReturn(Optional.of(state));
         CheckersGameService service = new CheckersGameService(
                 stateRepository,
                 mock(GameRoomRepository.class),
@@ -364,7 +364,7 @@ class CheckersGameServiceTest {
 
         CheckersGameState state = CheckersGameState.start(room);
         state.startClock(Instant.now());
-        when(stateRepository.findByRoomCode("ABC123")).thenReturn(Optional.of(state));
+        when(stateRepository.findByRoomCodeForUpdate("ABC123")).thenReturn(Optional.of(state));
 
         CheckersGameService service = new CheckersGameService(
                 stateRepository,
@@ -393,7 +393,7 @@ class CheckersGameServiceTest {
         state.startClock(startedAt);
         CheckersGameStateRepository stateRepository = mock(CheckersGameStateRepository.class);
         RoomRealtimePublisher publisher = mock(RoomRealtimePublisher.class);
-        when(stateRepository.findByRoomCode("ABC123")).thenReturn(Optional.of(state));
+        when(stateRepository.findByRoomCodeForUpdate("ABC123")).thenReturn(Optional.of(state));
 
         CheckersGameService service = new CheckersGameService(
                 stateRepository,

@@ -25,7 +25,7 @@ class ChessGameServiceTest {
         state.startClock(room.getStartedAt());
         ChessGameStateRepository states = mock(ChessGameStateRepository.class);
         RoomRealtimePublisher publisher = mock(RoomRealtimePublisher.class);
-        when(states.findByRoomCode("CHSAPI")).thenReturn(Optional.of(state));
+        when(states.findByRoomCodeForUpdate("CHSAPI")).thenReturn(Optional.of(state));
         when(states.save(state)).thenReturn(state);
         ChessGameService service = new ChessGameService(states, mock(GameRoomRepository.class), publisher,
                 mock(com.duelo64.backend.game.match.MatchHistoryService.class));
@@ -49,7 +49,7 @@ class ChessGameServiceTest {
         room.join(user(blackId));
         ChessGameState state = ChessGameState.start(room);
         ChessGameStateRepository states = mock(ChessGameStateRepository.class);
-        when(states.findByRoomCode("CHSDRW")).thenReturn(Optional.of(state));
+        when(states.findByRoomCodeForUpdate("CHSDRW")).thenReturn(Optional.of(state));
         ChessGameService service = new ChessGameService(states, mock(GameRoomRepository.class), mock(RoomRealtimePublisher.class), mock(com.duelo64.backend.game.match.MatchHistoryService.class));
 
         service.offerDraw(whiteId, "CHSDRW");
@@ -70,7 +70,7 @@ class ChessGameServiceTest {
         room.join(user(blackId));
         ChessGameState state = ChessGameState.start(room);
         ChessGameStateRepository states = mock(ChessGameStateRepository.class);
-        when(states.findByRoomCode("CHSRES")).thenReturn(Optional.of(state));
+        when(states.findByRoomCodeForUpdate("CHSRES")).thenReturn(Optional.of(state));
         ChessGameService service = new ChessGameService(states, mock(GameRoomRepository.class), mock(RoomRealtimePublisher.class), mock(com.duelo64.backend.game.match.MatchHistoryService.class));
 
         service.resign(blackId, "CHSRES");
@@ -78,6 +78,32 @@ class ChessGameServiceTest {
         assertThat(state.getWinnerColor()).isEqualTo(ChessColor.WHITE);
         assertThat(state.getFinishReason()).isEqualTo(ChessFinishReason.RESIGNATION);
     }
+    @Test
+    void finishedStateIsNotFinishedAgainEvenIfRoomInstanceIsStale() {
+        UUID whiteId = UUID.randomUUID();
+        UUID blackId = UUID.randomUUID();
+        GameRoom room = GameRoom.rankedRoom("CHSSTL", GameType.CHESS, 10, user(whiteId));
+        room.join(user(blackId));
+        ChessGameState state = ChessGameState.start(room);
+        // Outra transacao ja encerrou a partida; esta instancia da sala ainda diz IN_PROGRESS.
+        state.finish(ChessColor.WHITE, ChessFinishReason.RESIGNATION, java.time.Instant.now());
+        ChessGameStateRepository states = mock(ChessGameStateRepository.class);
+        when(states.findByRoomCodeForUpdate("CHSSTL")).thenReturn(Optional.of(state));
+        var history = mock(com.duelo64.backend.game.match.MatchHistoryService.class);
+        ChessGameService service = new ChessGameService(states, mock(GameRoomRepository.class),
+                mock(RoomRealtimePublisher.class), history);
+
+        assertThatThrownBy(() -> service.resign(whiteId, "CHSSTL"))
+                .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
+        assertThatThrownBy(() -> service.move(whiteId, "CHSSTL", new ChessPosition(6, 4), new ChessPosition(4, 4)))
+                .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
+        service.confirmTimeout(blackId, "CHSSTL");
+
+        assertThat(state.getFinishReason()).isEqualTo(ChessFinishReason.RESIGNATION);
+        assertThat(state.getWinnerColor()).isEqualTo(ChessColor.WHITE);
+        verify(history, never()).recordCompletedMatch(any());
+    }
+
     @Test
     void invalidMoveDoesNotPersistChangedState() {
         UUID whiteId = UUID.randomUUID();
@@ -87,7 +113,7 @@ class ChessGameServiceTest {
         room.join(black);
         ChessGameState state = ChessGameState.start(room);
         ChessGameStateRepository states = mock(ChessGameStateRepository.class);
-        when(states.findByRoomCode("CHS001")).thenReturn(Optional.of(state));
+        when(states.findByRoomCodeForUpdate("CHS001")).thenReturn(Optional.of(state));
         ChessGameService service = new ChessGameService(states, mock(GameRoomRepository.class), mock(RoomRealtimePublisher.class), mock(com.duelo64.backend.game.match.MatchHistoryService.class));
 
         assertThatThrownBy(() -> service.move(
