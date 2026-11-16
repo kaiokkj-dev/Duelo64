@@ -102,7 +102,7 @@ class ChessGameTerminationTest {
         Fixture fixture = fixture(ChessFen.initial().notation());
         fixture.room.finish();
         ChessGameStateRepository repository = mock(ChessGameStateRepository.class);
-        when(repository.findByRoomCode("CHSTEST")).thenReturn(Optional.of(fixture.state));
+        when(repository.findByRoomCodeForUpdate("CHSTEST")).thenReturn(Optional.of(fixture.state));
         ChessGameService service = new ChessGameService(repository, mock(GameRoomRepository.class), mock(RoomRealtimePublisher.class), mock(com.duelo64.backend.game.match.MatchHistoryService.class));
 
         assertThatThrownBy(() -> service.move(fixture.whiteId, "CHSTEST", p(6, 4), p(4, 4)))

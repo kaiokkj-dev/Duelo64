@@ -77,7 +77,7 @@ public class CheckersGameService {
         CheckersGameState state = findState(roomCode);
         GameRoom room = state.getRoom();
 
-        if (room.getStatus() != RoomStatus.IN_PROGRESS) {
+        if (!isActive(state)) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "A partida ainda nao esta em andamento.");
@@ -117,7 +117,7 @@ public class CheckersGameService {
 
         if (!result.mustContinueCapture()) {
             finishIfOpponentCannotPlay(state, playerColor);
-            if (room.getStatus() == RoomStatus.IN_PROGRESS) {
+            if (isActive(state)) {
                 finishIfAutomaticDraw(state);
             }
         }
@@ -194,7 +194,7 @@ public class CheckersGameService {
         finishOnTimeout(state, Instant.now());
         GameRoom room = state.getRoom();
 
-        if (room.getStatus() != RoomStatus.IN_PROGRESS) {
+        if (!isActive(state)) {
             return List.of();
         }
 
@@ -227,7 +227,7 @@ public class CheckersGameService {
     private void finishOnTimeout(CheckersGameState state, Instant now) {
         GameRoom room = state.getRoom();
 
-        if (room.getStatus() != RoomStatus.IN_PROGRESS) {
+        if (!isActive(state)) {
             return;
         }
 
@@ -277,7 +277,7 @@ public class CheckersGameService {
     }
 
     private void completeMatch(CheckersGameState state, PieceColor winner, CheckersFinishReason reason) {
-        if (state.getRoom().getStatus() == RoomStatus.FINISHED) return;
+        if (isFinished(state)) return;
         state.finish(winner, reason);
         state.getRoom().finish();
         MatchResult result = winner == null ? MatchResult.DRAW
@@ -288,13 +288,13 @@ public class CheckersGameService {
 
     private CheckersGameState findState(String roomCode) {
         return checkersGameStateRepository
-                .findByRoomCode(normalizeCode(roomCode))
+                .findByRoomCodeForUpdate(normalizeCode(roomCode))
                 .orElseGet(() -> createStateForExistingRoom(roomCode));
     }
 
     private CheckersGameState findInProgressState(String roomCode) {
         CheckersGameState state = findState(roomCode);
-        if (state.getRoom().getStatus() != RoomStatus.IN_PROGRESS) {
+        if (!isActive(state)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A partida nao esta em andamento.");
         }
         return state;
@@ -329,6 +329,18 @@ public class CheckersGameService {
                     HttpStatus.CONFLICT,
                     "Esta sala nao pertence a modalidade Damas.");
         }
+    }
+
+    /*
+     * O estado e lido com lock, mas a sala pode ja estar no contexto de persistencia
+     * (ex.: resolveTimedOutRooms) com status antigo; o finishReason do estado e a fonte confiavel.
+     */
+    private boolean isFinished(CheckersGameState state) {
+        return state.getFinishReason() != null || state.getRoom().getStatus() == RoomStatus.FINISHED;
+    }
+
+    private boolean isActive(CheckersGameState state) {
+        return state.getFinishReason() == null && state.getRoom().getStatus() == RoomStatus.IN_PROGRESS;
     }
 
     private PieceColor playerColorFor(GameRoom room, UUID userId) {

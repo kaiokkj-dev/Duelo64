@@ -68,7 +68,7 @@ public class ChessGameService {
             ChessPosition to,
             ChessPieceType promotion) {
         ChessGameState state = findState(roomCode);
-        if (state.getRoom().getStatus() != RoomStatus.IN_PROGRESS) {
+        if (!isActive(state)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A partida nao esta em andamento.");
         }
         ChessColor playerColor = playerColorFor(state.getRoom(), userId);
@@ -96,7 +96,7 @@ public class ChessGameService {
     public java.util.List<ChessLegalMove> legalMoves(UUID userId, String roomCode, ChessPosition from) {
         ChessGameState state = findState(roomCode);
         finishOnTimeout(state, Instant.now());
-        if (state.getRoom().getStatus() != RoomStatus.IN_PROGRESS) return java.util.List.of();
+        if (!isActive(state)) return java.util.List.of();
         ChessColor color = playerColorFor(state.getRoom(), userId);
         if (color != state.getCurrentTurn()) return java.util.List.of();
         return rules.legalMoves(state.chessFen(), from);
@@ -148,7 +148,7 @@ public class ChessGameService {
     }
 
     void finishIfRequired(ChessGameState state) {
-        if (state.getRoom().getStatus() == RoomStatus.FINISHED) return;
+        if (isFinished(state)) return;
         ChessFen fen = state.chessFen();
         ChessColor playerToMove = fen.activeColor();
         ChessFinishReason reason = null;
@@ -178,7 +178,7 @@ public class ChessGameService {
     }
 
     private void finishOnTimeout(ChessGameState state, Instant now) {
-        if (state.getRoom().getStatus() != RoomStatus.IN_PROGRESS) return;
+        if (!isActive(state)) return;
 
         long remainingMillis = state.getCurrentTurn() == ChessColor.WHITE
                 ? state.calculateWhiteRemainingMillis(now)
@@ -192,7 +192,7 @@ public class ChessGameService {
     }
 
     private void complete(ChessGameState state, ChessColor winner, ChessFinishReason reason) {
-        if (state.getRoom().getStatus() == RoomStatus.FINISHED) return;
+        if (isFinished(state)) return;
         state.finish(winner, reason, Instant.now());
         state.getRoom().finish();
         MatchResult result = winner == null ? MatchResult.DRAW
@@ -203,7 +203,7 @@ public class ChessGameService {
 
     private ChessGameState findInProgressState(String roomCode) {
         ChessGameState state = findState(roomCode);
-        if (state.getRoom().getStatus() != RoomStatus.IN_PROGRESS) {
+        if (!isActive(state)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A partida nao esta em andamento.");
         }
         return state;
@@ -220,10 +220,22 @@ public class ChessGameService {
 
     private ChessGameState findState(String roomCode) {
         String code = roomCode == null ? "" : roomCode.trim().toUpperCase(Locale.ROOT);
-        return stateRepository.findByRoomCode(code).orElseGet(() -> {
+        return stateRepository.findByRoomCodeForUpdate(code).orElseGet(() -> {
             GameRoom room = roomRepository.findByCode(code).orElseThrow(RoomNotFoundException::new);
             return createInitialState(room);
         });
+    }
+
+    /*
+     * O estado e lido com lock, mas a sala pode ja estar no contexto de persistencia
+     * (ex.: resolveTimedOutRooms) com status antigo; o finishReason do estado e a fonte confiavel.
+     */
+    private boolean isFinished(ChessGameState state) {
+        return state.getFinishReason() != null || state.getRoom().getStatus() == RoomStatus.FINISHED;
+    }
+
+    private boolean isActive(ChessGameState state) {
+        return state.getFinishReason() == null && state.getRoom().getStatus() == RoomStatus.IN_PROGRESS;
     }
 
     private ChessColor playerColorFor(GameRoom room, UUID userId) {
